@@ -7,29 +7,70 @@
   <title>SureX Recruitment | Login Test</title>
   <style>
     * { box-sizing: border-box; }
+
     body {
-      margin: 0; min-height: 100vh; display: grid; place-items: center;
-      padding: 20px; background: #101820;
-      font-family: Arial, sans-serif; color: #fff;
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 20px;
+      background: #101820;
+      font-family: Arial, sans-serif;
+      color: #fff;
     }
+
     .panel {
-      width: 100%; max-width: 420px; padding: 32px;
-      background: #1d2935; border: 1px solid #354555; border-radius: 14px;
+      width: 100%;
+      max-width: 420px;
+      padding: 32px;
+      background: #1d2935;
+      border: 1px solid #354555;
+      border-radius: 14px;
     }
+
     h1 { margin-top: 0; font-size: 25px; }
-    p { color: #b8c5d1; line-height: 1.5; overflow-wrap: anywhere; }
-    label { display: block; margin: 18px 0 7px; }
+
+    p {
+      color: #b8c5d1;
+      line-height: 1.5;
+      overflow-wrap: anywhere;
+    }
+
+    label {
+      display: block;
+      margin: 18px 0 7px;
+    }
+
     input {
-      width: 100%; padding: 12px; border: 1px solid #536474;
-      border-radius: 7px; background: #101820; color: white; font-size: 16px;
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #536474;
+      border-radius: 7px;
+      background: #101820;
+      color: white;
+      font-size: 16px;
     }
+
     button {
-      width: 100%; padding: 13px; margin-top: 18px; border: 0;
-      border-radius: 7px; background: #00b8d9; color: #07141c;
-      font-weight: bold; font-size: 15px; cursor: pointer;
+      width: 100%;
+      padding: 13px;
+      margin-top: 18px;
+      border: 0;
+      border-radius: 7px;
+      background: #00b8d9;
+      color: #07141c;
+      font-weight: bold;
+      font-size: 15px;
+      cursor: pointer;
     }
-    button:disabled { opacity: .6; cursor: wait; }
+
+    button:disabled {
+      opacity: .6;
+      cursor: wait;
+    }
+
     .note { font-size: 12px; }
+
     #dbResult { white-space: pre-wrap; }
   </style>
 </head>
@@ -40,28 +81,47 @@
 
     <form id="loginForm">
       <label for="email">Email address</label>
-      <input id="email" type="email" autocomplete="username" required>
+      <input
+        id="email"
+        type="email"
+        autocomplete="username"
+        required
+      >
 
       <label for="password">Password</label>
-      <input id="password" type="password"
-        autocomplete="current-password" required>
+      <input
+        id="password"
+        type="password"
+        autocomplete="current-password"
+        required
+      >
 
       <button id="loginButton" type="submit">Sign in</button>
     </form>
 
-    <button id="dbButton" type="button" hidden>Test database access</button>
-    <button id="logoutButton" type="button" hidden>Sign out</button>
+    <button id="dbButton" type="button" hidden>
+      Test candidates database access
+    </button>
+
+    <button id="logoutButton" type="button" hidden>
+      Sign out
+    </button>
 
     <p id="message" role="status">Checking configuration...</p>
     <p id="dbResult" role="status"></p>
-    <p class="note">Test page only. Do not enter candidate information here.</p>
+
+    <p class="note">
+      Test page only. Do not enter candidate information here.
+    </p>
   </main>
 
   <script type="module">
     import { createClient } from
       "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
 
-    const SUPABASE_URL = "https://mlovrosbgesesidlqbth.supabase.co";
+    const SUPABASE_URL =
+      "https://mlovrosbgesesidlqbth.supabase.co";
+
     const SUPABASE_PUBLISHABLE_KEY =
       "sb_publishable_9as4DXTfGM-axP-EdQVbGQ_B-zdUuxg";
 
@@ -81,7 +141,8 @@
       const { data, error } = await supabase.auth.getSession();
 
       if (error) {
-        message.textContent = "Session check failed: " + error.message;
+        message.textContent =
+          "Session check failed: " + error.message;
         return;
       }
 
@@ -92,12 +153,14 @@
       logoutButton.hidden = !user;
 
       message.textContent = user
-        ? "Signed in as " + user.email + ". You can now test database access."
+        ? "Signed in as " + user.email +
+          ". You can now test candidate database access."
         : "Enter your account details to test login.";
     }
 
     form.addEventListener("submit", async (event) => {
       event.preventDefault();
+
       loginButton.disabled = true;
       message.textContent = "Signing in...";
       dbResult.textContent = "";
@@ -114,7 +177,8 @@
           await showSession();
         }
       } catch {
-        message.textContent = "Could not reach Supabase. Check your connection.";
+        message.textContent =
+          "Could not reach Supabase. Check your connection.";
       } finally {
         loginButton.disabled = false;
       }
@@ -122,22 +186,23 @@
 
     dbButton.addEventListener("click", async () => {
       dbButton.disabled = true;
-      dbResult.textContent = "Testing branches table access...";
+      dbResult.textContent = "Testing candidates table access...";
 
       try {
         const { data, error } = await supabase
-          .from("branches")
+          .from("candidates")
           .select("id")
           .limit(1);
 
         if (error) {
           dbResult.textContent =
-            "Database test failed.\nCode: " + (error.code || "unknown") +
-            "\nMessage: " + error.message;
+            "Database test failed.\n" +
+            "Code: " + (error.code || "unknown") + "\n" +
+            "Message: " + error.message;
         } else {
           dbResult.textContent =
-            "Database read successful!\n" +
-            "The signed-in user can read the branches table.\n" +
+            "Candidate database read successful!\n" +
+            "The signed-in user can read the candidates table.\n" +
             "Rows returned: " + data.length;
         }
       } catch {
@@ -150,9 +215,11 @@
 
     logoutButton.addEventListener("click", async () => {
       logoutButton.disabled = true;
+
       const { error } = await supabase.auth.signOut();
 
       dbResult.textContent = "";
+
       message.textContent = error
         ? "Sign out failed: " + error.message
         : "Signed out successfully.";
