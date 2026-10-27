@@ -1,0 +1,170 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SureX Recruitment | Login Test</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 20px;
+      background: #101820;
+      font-family: Arial, sans-serif;
+      color: #fff;
+    }
+    .panel {
+      width: 100%;
+      max-width: 420px;
+      padding: 32px;
+      background: #1d2935;
+      border: 1px solid #354555;
+      border-radius: 14px;
+    }
+    h1 { margin-top: 0; font-size: 25px; }
+    p { color: #b8c5d1; line-height: 1.5; }
+    label { display: block; margin: 18px 0 7px; }
+    input {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #536474;
+      border-radius: 7px;
+      background: #101820;
+      color: white;
+      font-size: 16px;
+    }
+    button {
+      width: 100%;
+      padding: 13px;
+      margin-top: 18px;
+      border: 0;
+      border-radius: 7px;
+      background: #00b8d9;
+      color: #07141c;
+      font-weight: bold;
+      font-size: 15px;
+      cursor: pointer;
+    }
+    button:disabled { opacity: .6; cursor: wait; }
+    #message { overflow-wrap: anywhere; }
+    .note { font-size: 12px; }
+  </style>
+</head>
+<body>
+  <main class="panel">
+    <h1>SureX Recruitment</h1>
+    <p>Login connection test</p>
+
+    <form id="loginForm">
+      <label for="email">Email address</label>
+      <input id="email" type="email" autocomplete="username" required>
+
+      <label for="password">Password</label>
+      <input id="password" type="password"
+        autocomplete="current-password" required>
+
+      <button id="loginButton" type="submit">Sign in</button>
+    </form>
+
+    <button id="logoutButton" type="button" hidden>Sign out</button>
+    <p id="message" role="status">Configure the Supabase settings to begin.</p>
+    <p class="note">Test page only. Do not enter candidate information here.</p>
+  </main>
+
+  <script type="module">
+    import { createClient } from
+      "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
+
+    // Replace these two placeholders with your Supabase Project URL
+    // and Publishable key. Never use a Secret or service-role key here.
+    const SUPABASE_URL = "https://mlovrosbgesesidlqbth.supabase.co";
+    const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_9as4DXTfGM-axP-EdQVbGQ_B-zdUuxg";
+
+    const message = document.getElementById("message");
+    const form = document.getElementById("loginForm");
+    const loginButton = document.getElementById("loginButton");
+    const logoutButton = document.getElementById("logoutButton");
+
+    if (
+      SUPABASE_URL.includes("PASTE_") ||
+      SUPABASE_PUBLISHABLE_KEY.includes("PASTE_")
+    ) {
+      message.textContent =
+        "Setup required: add the Supabase Project URL and Publishable key in this file.";
+    } else {
+      const supabase = createClient(
+        SUPABASE_URL,
+        SUPABASE_PUBLISHABLE_KEY
+      );
+
+      const showSession = async () => {
+        const { data, error } = await supabase.auth.getSession();
+
+        if (error) {
+          message.textContent = "Session check failed: " + error.message;
+          return;
+        }
+
+        const user = data.session?.user;
+
+        if (user) {
+          form.hidden = true;
+          logoutButton.hidden = false;
+          message.textContent =
+            "Login successful for " + user.email +
+            ". This confirms authentication only; portal access is not yet enabled.";
+        } else {
+          form.hidden = false;
+          logoutButton.hidden = true;
+          message.textContent = "Enter your account details to test login.";
+        }
+      };
+
+      form.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        loginButton.disabled = true;
+        message.textContent = "Signing in...";
+
+        try {
+          const { error } = await supabase.auth.signInWithPassword({
+            email: document.getElementById("email").value.trim(),
+            password: document.getElementById("password").value
+          });
+
+          if (error) {
+            message.textContent = "Login failed: " + error.message;
+          } else {
+            await showSession();
+          }
+        } catch {
+          message.textContent =
+            "Could not reach Supabase. Check your connection and settings.";
+        } finally {
+          loginButton.disabled = false;
+        }
+      });
+
+      logoutButton.addEventListener("click", async () => {
+        logoutButton.disabled = true;
+
+        const { error } = await supabase.auth.signOut();
+
+        if (error) {
+          message.textContent = "Sign out failed: " + error.message;
+        } else {
+          message.textContent = "Signed out successfully.";
+          await showSession();
+        }
+
+        logoutButton.disabled = false;
+      });
+
+      showSession();
+    }
+  </script>
+</body>
+</html>
