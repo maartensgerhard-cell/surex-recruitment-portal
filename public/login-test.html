@@ -100,14 +100,14 @@
     </form>
 
     <button id="dbButton" type="button" hidden>
-      Test candidates database access
+      Test document database access
     </button>
 
     <button id="logoutButton" type="button" hidden>
       Sign out
     </button>
 
-    <p id="message" role="status">Checking configuration...</p>
+    <p id="message" role="status">Checking connection...</p>
     <p id="dbResult" role="status"></p>
 
     <p class="note">
@@ -154,7 +154,7 @@
 
       message.textContent = user
         ? "Signed in as " + user.email +
-          ". You can now test candidate database access."
+          ". You can now test document database access."
         : "Enter your account details to test login.";
     }
 
@@ -186,11 +186,12 @@
 
     dbButton.addEventListener("click", async () => {
       dbButton.disabled = true;
-      dbResult.textContent = "Testing candidates table access...";
+      dbResult.textContent =
+        "Testing candidate_documents table access...";
 
       try {
         const { data, error } = await supabase
-          .from("candidates")
+          .from("candidate_documents")
           .select("id")
           .limit(1);
 
@@ -201,8 +202,8 @@
             "Message: " + error.message;
         } else {
           dbResult.textContent =
-            "Candidate database read successful!\n" +
-            "The signed-in user can read the candidates table.\n" +
+            "Document database read successful!\n" +
+            "The signed-in user can read candidate_documents.\n" +
             "Rows returned: " + data.length;
         }
       } catch {
