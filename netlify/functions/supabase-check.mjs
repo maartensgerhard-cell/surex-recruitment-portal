@@ -10,14 +10,16 @@ export default async (request) => {
     );
   }
 
-  const supabaseUrl = process.env.SUPABASE_URL;
-  const supabaseKey = process.env.SUPABASE_ANON_KEY;
+  const supabaseUrl = process.env.SUPABASE_URL?.trim();
+  const supabaseKey = process.env.SUPABASE_ANON_KEY?.trim();
 
   if (!supabaseUrl || !supabaseKey) {
     return new Response(
       JSON.stringify({
         ok: false,
-        message: "Supabase environment variables are missing.",
+        status: 500,
+        errorCode: "MISSING_ENVIRONMENT_VARIABLE",
+        message: "A required Supabase environment variable is missing.",
       }),
       {
         status: 500,
@@ -28,7 +30,7 @@ export default async (request) => {
 
   try {
     const response = await fetch(
-      `${supabaseUrl}/rest/v1/branches?select=id&limit=1`,
+      `${supabaseUrl.replace(/\/+$/, "")}/rest/v1/branches?select=id&limit=1`,
       {
         headers: {
           apikey: supabaseKey,
@@ -37,13 +39,24 @@ export default async (request) => {
       }
     );
 
+    const errorCode = response.ok
+      ? null
+      : response.status === 401
+        ? "UNAUTHORIZED"
+        : response.status === 403
+          ? "FORBIDDEN"
+          : response.status === 404
+            ? "ENDPOINT_NOT_FOUND"
+            : "SUPABASE_REQUEST_FAILED";
+
     return new Response(
       JSON.stringify({
         ok: response.ok,
         status: response.status,
+        errorCode,
         message: response.ok
           ? "Supabase connection successful."
-          : "Supabase responded with an error. Check the project URL, key, and database permissions.",
+          : "Supabase rejected the request. Check the key type, project URL, and API configuration.",
       }),
       {
         status: response.ok ? 200 : 502,
@@ -54,7 +67,9 @@ export default async (request) => {
     return new Response(
       JSON.stringify({
         ok: false,
-        message: "Could not reach Supabase.",
+        status: 502,
+        errorCode: "CONNECTION_FAILED",
+        message: "Could not reach Supabase. Check the project URL and network connection.",
       }),
       {
         status: 502,
