@@ -1,66 +1,64 @@
 
 export default async (request) => {
   if (request.method !== "GET") {
-    return new Response(
-      JSON.stringify({ error: "Method not allowed" }),
-      {
-        status: 405,
-        headers: { "Content-Type": "application/json" },
-      }
-    );
+    return new Response("Method not allowed", { status: 405 });
   }
 
-  const supabaseUrl = process.env.SUPABASE_URL?.trim();
-  const supabaseKey = process.env.SUPABASE_ANON_KEY?.trim();
+  const url = process.env.SUPABASE_URL?.trim().replace(/\/+$/, "");
+  const key = process.env.SUPABASE_ANON_KEY?.trim();
 
-  if (!supabaseUrl || !supabaseKey) {
+  const headers = { "Content-Type": "application/json" };
+
+  if (!url || !key) {
     return new Response(
       JSON.stringify({
         ok: false,
-        status: 500,
         errorCode: "MISSING_ENVIRONMENT_VARIABLE",
-        message: "A required Supabase environment variable is missing.",
       }),
-      {
-        status: 500,
-        headers: { "Content-Type": "application/json" },
-      }
+      { status: 500, headers }
     );
   }
 
   try {
-    const response = await fetch(
-      `${supabaseUrl.replace(/\/+$/, "")}/rest/v1/branches?select=id&limit=1`,
-      {
-        headers: {
-          apikey: supabaseKey,
-          Authorization: `Bearer ${supabaseKey}`,
-        },
-      }
-    );
+    const response = await fetch(`${url}/rest/v1/branches?select=id&limit=1`, {
+      headers: {
+        apikey: key,
+        Authorization: `Bearer ${key}`,
+      },
+    });
 
-    const errorCode = response.ok
-      ? null
-      : response.status === 401
-        ? "UNAUTHORIZED"
-        : response.status === 403
-          ? "FORBIDDEN"
-          : response.status === 404
-            ? "ENDPOINT_NOT_FOUND"
-            : "SUPABASE_REQUEST_FAILED";
+    const body = await response.text();
+    let category = "OTHER";
+
+    if (response.status === 401) {
+      category = "CHECK_API_KEY_AND_PROJECT_URL";
+    } else if (response.status === 403) {
+      category = "CHECK_DATABASE_PERMISSIONS";
+    } else if (response.status === 404) {
+      category = "CHECK_REST_ENDPOINT";
+    }
+
+    let details = null;
+    try {
+      const parsed = JSON.parse(body);
+      details = {
+        code: parsed.code || null,
+        message: parsed.message || null,
+      };
+    } catch {
+      details = { message: "Supabase returned a non-JSON response." };
+    }
 
     return new Response(
       JSON.stringify({
         ok: response.ok,
         status: response.status,
-        errorCode,
-        message: response.ok
-          ? "Supabase connection successful."
-          : "Supabase rejected the request. Check the key type, project URL, and API configuration.",
+        category,
+        details,
       }),
       {
         status: response.ok ? 200 : 502,
-        headers: { "Content-Type": "application/json" },
+        headers,
       }
     );
   } catch {
@@ -68,13 +66,9 @@ export default async (request) => {
       JSON.stringify({
         ok: false,
         status: 502,
-        errorCode: "CONNECTION_FAILED",
-        message: "Could not reach Supabase. Check the project URL and network connection.",
+        category: "CONNECTION_FAILED",
       }),
-      {
-        status: 502,
-        headers: { "Content-Type": "application/json" },
-      }
+      { status: 502, headers }
     );
   }
 };
