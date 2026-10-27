@@ -2,322 +2,704 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SureX | Recruitment Portal</title>
-<style>
-:root {
-  --navy: #101d32;
-  --blue: #0878c9;
-  --cyan: #00c5df;
-  --bg: #f3f6fa;
-  --white: #ffffff;
-  --text: #17253b;
-  --muted: #758197;
-  --border: #e5eaf1;
-}
-* { box-sizing: border-box; }
-body {
-  margin: 0;
-  font-family: Arial, Helvetica, sans-serif;
-  background: var(--bg);
-  color: var(--text);
-}
-.layout { min-height: 100vh; display: flex; }
-.sidebar {
-  width: 245px;
-  background: var(--navy);
-  color: white;
-  padding: 28px 18px;
-  flex-shrink: 0;
-}
-.brand { font-size: 25px; font-weight: 800; letter-spacing: 1px; }
-.brand span { color: var(--cyan); }
-.brand-sub { color: #aab9cb; font-size: 11px; margin-top: 7px; letter-spacing: 2px; }
-.nav-label {
-  color: #8495ad;
-  font-size: 10px;
-  font-weight: bold;
-  letter-spacing: 1.5px;
-  margin: 38px 12px 12px;
-}
-.nav-item {
-  display: block;
-  width: 100%;
-  text-align: left;
-  padding: 13px 14px;
-  border: 0;
-  background: transparent;
-  color: #c6d1df;
-  border-radius: 8px;
-  margin: 5px 0;
-  font-size: 14px;
-  cursor: pointer;
-}
-.nav-item.active { background: #0878c9; color: white; }
-.nav-item:hover { background: #203651; color: white; }
-.nav-item.active:hover { background: #0878c9; }
-.sidebar-note {
-  margin-top: 45px;
-  padding: 14px;
-  border: 1px solid #34445a;
-  border-radius: 10px;
-  color: #aab9cb;
-  font-size: 12px;
-  line-height: 1.6;
-}
-.main { min-width: 0; flex: 1; }
-.topbar {
-  background: white;
-  padding: 19px 30px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  border-bottom: 1px solid var(--border);
-  gap: 15px;
-}
-.topbar small { color: var(--muted); }
-.profile { display: flex; align-items: center; gap: 10px; font-size: 13px; }
-.avatar {
-  width: 38px; height: 38px; border-radius: 50%;
-  background: #d9f7fb; color: #0878c9;
-  display: grid; place-items: center; font-weight: bold;
-}
-.content { padding: 30px; max-width: 1500px; margin: auto; }
-h1 { margin: 0 0 8px; font-size: 28px; }
-.subtitle { color: var(--muted); margin: 0; font-size: 14px; line-height: 1.5; }
-.welcome {
-  background: linear-gradient(115deg, #10223b, #0878c9);
-  color: white;
-  padding: 28px;
-  border-radius: 14px;
-  margin-bottom: 25px;
-  position: relative;
-  overflow: hidden;
-}
-.welcome:after {
-  content: ""; position: absolute; width: 180px; height: 180px;
-  border: 30px solid rgba(0,197,223,.17); border-radius: 50%;
-  right: -35px; top: -65px;
-}
-.welcome h1 { font-size: 26px; }
-.welcome p { color: #d9eafa; font-size: 14px; margin-bottom: 0; }
-.section-title {
-  display: flex; justify-content: space-between; align-items: center;
-  gap: 12px; margin: 26px 0 15px;
-}
-.section-title h2 { font-size: 17px; margin: 0; }
-.cards {
-  display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px;
-}
-.card {
-  background: white; border: 1px solid var(--border);
-  border-radius: 12px; padding: 21px;
-}
-.card-label { color: var(--muted); font-size: 12px; }
-.card-number { font-size: 29px; font-weight: 800; margin: 13px 0 8px; }
-.card-foot { color: var(--muted); font-size: 11px; }
-.card-icon {
-  width: 38px; height: 38px; display: grid; place-items: center;
-  border-radius: 10px; background: #e7f6ff; color: #0878c9; font-size: 18px;
-  margin-bottom: 15px;
-}
-.panel {
-  background: white; border: 1px solid var(--border);
-  border-radius: 12px; overflow: hidden;
-}
-.panel-head {
-  padding: 19px 21px; display: flex; justify-content: space-between;
-  align-items: center; gap: 12px; border-bottom: 1px solid var(--border);
-}
-.panel-head h2 { margin: 0; font-size: 16px; }
-.panel-body { padding: 20px; }
-.quick-actions {
-  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px;
-}
-.action {
-  padding: 18px; border: 1px solid var(--border); border-radius: 10px;
-  background: white; text-align: left; cursor: pointer; color: var(--text);
-}
-.action:hover { border-color: var(--cyan); background: #f5fcff; }
-.action strong { display: block; margin: 10px 0 6px; font-size: 14px; }
-.action small { color: var(--muted); line-height: 1.5; }
-.action-icon { color: var(--blue); font-size: 22px; }
-.btn {
-  border: 0; border-radius: 7px; background: var(--blue); color: white;
-  padding: 11px 15px; font-weight: bold; font-size: 12px; cursor: pointer;
-}
-.btn:hover { background: #0563a7; }
-.btn.secondary { background: white; color: var(--blue); border: 1px solid #cddce9; }
-.status-list { display: grid; gap: 17px; }
-.status-row { display: grid; grid-template-columns: 155px 1fr 28px; gap: 12px; align-items: center; font-size: 12px; }
-.track { height: 8px; border-radius: 10px; background: #edf1f6; overflow: hidden; }
-.fill { height: 100%; width: 0; background: var(--cyan); border-radius: 10px; }
-.notice {
-  margin-top: 22px; padding: 14px 16px; background: #fff8e7;
-  color: #79591a; border: 1px solid #f1dfb5; border-radius: 9px;
-  font-size: 12px; line-height: 1.6;
-}
-.page { display: none; }
-.page.active { display: block; }
-.empty { padding: 35px 15px; text-align: center; color: var(--muted); font-size: 13px; }
-.form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 15px; }
-.field label { display: block; font-size: 12px; margin-bottom: 7px; font-weight: bold; }
-.field input, .field select, .field textarea {
-  width: 100%; border: 1px solid #dbe2ec; border-radius: 7px;
-  padding: 11px; font: inherit; font-size: 13px; background: white;
-}
-.field textarea { min-height: 90px; resize: vertical; }
-.field.full { grid-column: 1 / -1; }
-.table-wrap { overflow-x: auto; }
-table { border-collapse: collapse; width: 100%; font-size: 12px; }
-th, td { padding: 13px 15px; text-align: left; border-bottom: 1px solid var(--border); white-space: nowrap; }
-th { color: var(--muted); background: #fafbfd; font-size: 10px; letter-spacing: .5px; }
-@media(max-width: 1000px) {
-  .cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .quick-actions { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-}
-@media(max-width: 650px) {
-  .layout { display: block; }
-  .sidebar { width: 100%; padding: 18px; }
-  .nav-label, .sidebar-note { display: none; }
-  .sidebar nav { display: flex; overflow-x: auto; gap: 5px; margin-top: 15px; }
-  .nav-item { width: auto; flex-shrink: 0; margin: 0; padding: 10px; }
-  .topbar { padding: 14px 18px; }
-  .content { padding: 18px; }
-  .cards, .quick-actions, .form-grid { grid-template-columns: 1fr; }
-  .field.full { grid-column: auto; }
-  .status-row { grid-template-columns: 115px 1fr 20px; }
-  h1 { font-size: 23px; }
-}
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SureX Recruitment Portal</title>
+
+  <style>
+    :root {
+      --navy: #101820;
+      --panel: #1d2935;
+      --border: #354555;
+      --cyan: #00b8d9;
+      --white: #ffffff;
+      --muted: #b8c5d1;
+      --danger: #ff7979;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: var(--navy);
+      color: var(--white);
+      font-family: Arial, sans-serif;
+    }
+
+    button, input, select, textarea { font: inherit; }
+
+    button {
+      border: 0;
+      border-radius: 7px;
+      padding: 11px 15px;
+      background: var(--cyan);
+      color: #07141c;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    button:disabled { opacity: .55; cursor: wait; }
+
+    button.secondary {
+      background: #354555;
+      color: white;
+    }
+
+    input, select, textarea {
+      width: 100%;
+      padding: 11px;
+      border: 1px solid #536474;
+      border-radius: 7px;
+      background: #101820;
+      color: white;
+      min-width: 0;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 6px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .hidden { display: none !important; }
+
+    .topbar {
+      padding: 20px 5%;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 15px;
+      flex-wrap: wrap;
+    }
+
+    .brand { font-size: 23px; font-weight: bold; }
+    .brand span { color: var(--cyan); }
+    .account { color: var(--muted); font-size: 13px; }
+
+    main {
+      max-width: 1400px;
+      padding: 28px 5%;
+      margin: auto;
+    }
+
+    h1 { font-size: 27px; margin: 0 0 8px; }
+    h2 { font-size: 19px; margin-top: 0; }
+    .muted { color: var(--muted); }
+    .small { font-size: 12px; }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 22px;
+      margin-top: 22px;
+    }
+
+    .toolbar {
+      display: grid;
+      grid-template-columns: minmax(200px, 2fr) repeat(3, minmax(140px, 1fr));
+      gap: 12px;
+      margin-top: 20px;
+    }
+
+    .field { min-width: 0; }
+    .field label { margin-top: 0; }
+
+    .actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .table-wrap { overflow-x: auto; margin-top: 18px; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 800px;
+    }
+
+    th, td {
+      text-align: left;
+      padding: 13px 12px;
+      border-bottom: 1px solid var(--border);
+      font-size: 13px;
+    }
+
+    th { color: var(--muted); font-weight: normal; }
+    td { overflow-wrap: anywhere; }
+
+    .status {
+      display: inline-block;
+      padding: 5px 8px;
+      background: #30404e;
+      border-radius: 5px;
+    }
+
+    .message {
+      padding: 12px;
+      margin-top: 15px;
+      border-radius: 7px;
+      background: #243744;
+      color: var(--muted);
+      overflow-wrap: anywhere;
+      white-space: pre-wrap;
+    }
+
+    .error { color: var(--danger); }
+
+    #loginPanel {
+      max-width: 440px;
+      margin: 70px auto;
+    }
+
+    #loginPanel input { margin-bottom: 15px; }
+    #loginPanel button { width: 100%; }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .form-grid .full { grid-column: 1 / -1; }
+    .form-grid textarea { min-height: 90px; resize: vertical; }
+    .form-grid button { margin-top: 4px; }
+
+    .count { margin-top: 14px; color: var(--muted); font-size: 13px; }
+
+    @media (max-width: 850px) {
+      .toolbar { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+
+    @media (max-width: 520px) {
+      main { padding: 22px 4%; }
+      .panel { padding: 16px; }
+      .toolbar, .form-grid { grid-template-columns: 1fr; }
+      .form-grid .full { grid-column: auto; }
+      h1 { font-size: 23px; }
+    }
+  </style>
 </head>
+
 <body>
-<div class="layout">
-  <aside class="sidebar">
-    <div class="brand">SURE<span>X</span></div>
-    <div class="brand-sub">RECRUITMENT PORTAL</div>
-    <div class="nav-label">WORKSPACE</div>
-    <nav>
-      <button class="nav-item active" data-page="dashboard">▦ &nbsp; Dashboard</button>
-      <button class="nav-item" data-page="candidates">♙ &nbsp; Candidates</button>
-      <button class="nav-item" data-page="screening">✓ &nbsp; Screening</button>
-      <button class="nav-item" data-page="reports">▤ &nbsp; Reports</button>
-      <button class="nav-item" data-page="recovery">↺ &nbsp; Recovery</button>
-    </nav>
-    <div class="sidebar-note">
-      <strong>Free State Region</strong><br>
-      Bloemfontein · Welkom · Bethlehem<br><br>
-      Recruitment workspace<br>
-      <span style="color:#00c5df">●</span> Interface preview
+  <header class="topbar">
+    <div class="brand">SureX <span>Recruitment</span></div>
+    <div class="actions">
+      <span id="account" class="account"></span>
+      <button id="logoutButton" class="secondary hidden" type="button">
+        Sign out
+      </button>
     </div>
-  </aside>
+  </header>
 
-  <main class="main">
-    <header class="topbar">
-      <div><strong>SureX Recruitment</strong><br><small>Free State Regional Office</small></div>
-      <div class="profile"><div class="avatar">SX</div><div><strong>Portal Preview</strong><br><small>Not signed in</small></div></div>
-    </header>
+  <main>
+    <section id="loginPanel" class="panel">
+      <h1>Welcome back</h1>
+      <p class="muted">Sign in to access the recruitment portal.</p>
 
-    <div class="content">
-      <section class="page active" id="dashboard">
-        <div class="welcome">
-          <h1>Recruitment Dashboard</h1>
-          <p>Your Free State recruitment activity, candidate pipeline and onboarding overview.</p>
-        </div>
-        <div class="cards">
-          <div class="card"><div class="card-icon">♙</div><div class="card-label">Total Candidates</div><div class="card-number">—</div><div class="card-foot">Connect database to load records</div></div>
-          <div class="card"><div class="card-icon">▣</div><div class="card-label">Awaiting Documents</div><div class="card-number">—</div><div class="card-foot">Document tracking to be connected</div></div>
-          <div class="card"><div class="card-icon">✓</div><div class="card-label">Ready for Submission</div><div class="card-number">—</div><div class="card-foot">Screening workflow to be connected</div></div>
-          <div class="card"><div class="card-icon">⇧</div><div class="card-label">Submitted to Head Office</div><div class="card-number">—</div><div class="card-foot">Submission tracking to be connected</div></div>
-        </div>
-        <div class="section-title"><h2>Quick Actions</h2></div>
-        <div class="quick-actions">
-          <button class="action" data-goto="candidates"><span class="action-icon">＋</span><strong>Candidate Management</strong><small>Open the candidate workspace and profile form.</small></button>
-          <button class="action" data-goto="screening"><span class="action-icon">✓</span><strong>Screening Checklist</strong><small>Review the planned checks and requirements.</small></button>
-          <button class="action" data-goto="reports"><span class="action-icon">▤</span><strong>Recruitment Reports</strong><small>View the planned reporting categories.</small></button>
-        </div>
-        <div class="section-title"><h2>Recruitment Pipeline</h2></div>
-        <div class="panel"><div class="panel-body"><div class="status-list">
-          <div class="status-row"><span>New</span><div class="track"><div class="fill" style="width:0%"></div></div><strong>—</strong></div>
-          <div class="status-row"><span>Documents Outstanding</span><div class="track"><div class="fill" style="width:0%"></div></div><strong>—</strong></div>
-          <div class="status-row"><span>Ready for Submission</span><div class="track"><div class="fill" style="width:0%"></div></div><strong>—</strong></div>
-          <div class="status-row"><span>Approved</span><div class="track"><div class="fill" style="width:0%"></div></div><strong>—</strong></div>
-        </div></div></div>
-        <div class="notice"><strong>Setup notice:</strong> This is a visual preview only. Login, database, document storage and reporting are not connected yet. Do not enter real candidate information.</div>
-      </section>
+      <form id="loginForm">
+        <label for="email">Email address</label>
+        <input id="email" type="email" autocomplete="username" required>
 
-      <section class="page" id="candidates">
-        <h1>Candidate Management</h1><p class="subtitle">Candidate profiles and onboarding status.</p>
-        <div class="section-title"><h2>New Candidate Form Preview</h2></div>
-        <div class="panel"><div class="panel-body">
-          <div class="form-grid">
-            <div class="field"><label>Full name</label><input placeholder="Candidate full name" disabled></div>
-            <div class="field"><label>Branch</label><select disabled><option>Select branch</option><option>Bloemfontein</option><option>Welkom</option><option>Bethlehem</option></select></div>
-            <div class="field"><label>Recruiter</label><select disabled><option>Select recruiter</option></select></div>
-            <div class="field"><label>Candidate status</label><select disabled><option>New</option><option>Documents Outstanding</option><option>Ready for Submission</option><option>Submitted to Head Office</option><option>Approved</option><option>Declined</option></select></div>
+        <label for="password">Password</label>
+        <input id="password" type="password"
+          autocomplete="current-password" required>
+
+        <button id="loginButton" type="submit">Sign in</button>
+      </form>
+
+      <p id="loginMessage" class="message" role="status">
+        Connecting to the portal...
+      </p>
+    </section>
+
+    <section id="appPanel" class="hidden">
+      <div>
+        <h1>Candidate management</h1>
+        <p class="muted">
+          View, search and manage recruitment candidates.
+        </p>
+      </div>
+
+      <section class="panel">
+        <div class="actions" style="justify-content:space-between">
+          <div>
+            <h2 style="margin-bottom:5px">Candidates</h2>
+            <span class="muted small">Live data from Supabase</span>
           </div>
-          <div class="notice">Form preview only. Fields will be enabled when secure login and database access are implemented.</div>
-        </div></div>
-        <div class="section-title"><h2>Candidate Register</h2></div>
-        <div class="panel"><div class="empty">Candidate records will appear here once the secure database is connected.</div></div>
-      </section>
-
-      <section class="page" id="screening">
-        <h1>Screening & Documentation</h1><p class="subtitle">Track the onboarding checks required for each candidate.</p>
-        <div class="section-title"><h2>Required Documents</h2></div>
-        <div class="panel"><div class="table-wrap"><table><thead><tr><th>DOCUMENT</th><th>REQUIREMENT</th><th>STATUS</th></tr></thead><tbody>
-          <tr><td>Identity Document</td><td>Required</td><td>Not connected</td></tr>
-          <tr><td>Matric Certificate</td><td>Required</td><td>Not connected</td></tr>
-          <tr><td>Driver's Licence</td><td>Required</td><td>Not connected</td></tr>
-          <tr><td>Tax Document</td><td>Required</td><td>Not connected</td></tr>
-          <tr><td>Bank Confirmation</td><td>Required</td><td>Not connected</td></tr>
-          <tr><td>CV</td><td>Required</td><td>Not connected</td></tr>
-          <tr><td>MIE Report</td><td>Required</td><td>Not connected</td></tr>
-        </tbody></table></div></div>
-        <div class="section-title"><h2>Screening Checks</h2></div>
-        <div class="panel"><div class="table-wrap"><table><thead><tr><th>CHECK</th><th>AVAILABLE OPTIONS</th></tr></thead><tbody>
-          <tr><td>Licence requirements</td><td>Pending · Met · Not Met</td></tr>
-          <tr><td>Credit check</td><td>Pending · Passed · Failed</td></tr>
-          <tr><td>MIE check</td><td>Pending · Passed · Failed</td></tr>
-        </tbody></table></div></div>
-      </section>
-
-      <section class="page" id="reports">
-        <h1>Recruitment Reports</h1><p class="subtitle">Monitor recruitment activity by branch, recruiter and candidate status.</p>
-        <div class="cards" style="margin-top:22px">
-          <div class="card"><div class="card-icon">⌂</div><div class="card-label">Branch Reports</div><div class="card-number">3</div><div class="card-foot">Bloemfontein · Welkom · Bethlehem</div></div>
-          <div class="card"><div class="card-icon">♙</div><div class="card-label">Recruiter Reports</div><div class="card-number">7</div><div class="card-foot">Configured recruiter list</div></div>
-          <div class="card"><div class="card-icon">▤</div><div class="card-label">Candidate Pipeline</div><div class="card-number">—</div><div class="card-foot">Awaiting database connection</div></div>
-          <div class="card"><div class="card-icon">⇩</div><div class="card-label">Export</div><div class="card-number">ZIP</div><div class="card-foot">Manual submission export planned</div></div>
+          <div class="actions">
+            <button id="refreshButton" class="secondary" type="button">
+              Refresh
+            </button>
+            <button id="showFormButton" type="button">
+              + Add candidate
+            </button>
+          </div>
         </div>
-        <div class="notice">Reports and ZIP exports will become functional after the secure database and document-storage integration.</div>
+
+        <div class="toolbar">
+          <div class="field">
+            <label for="search">Search candidate</label>
+            <input id="search" type="search"
+              placeholder="Type a candidate name">
+          </div>
+
+          <div class="field">
+            <label for="branchFilter">Branch</label>
+            <select id="branchFilter">
+              <option value="">All branches</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label for="recruiterFilter">Recruiter</label>
+            <select id="recruiterFilter">
+              <option value="">All recruiters</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label for="statusFilter">Status</label>
+            <select id="statusFilter">
+              <option value="">All statuses</option>
+            </select>
+          </div>
+        </div>
+
+        <p id="listMessage" class="message" role="status">
+          Loading candidates...
+        </p>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Candidate</th>
+                <th>Branch</th>
+                <th>Recruiter</th>
+                <th>Status</th>
+                <th>Licence</th>
+                <th>Credit</th>
+                <th>MIE</th>
+              </tr>
+            </thead>
+            <tbody id="candidateRows"></tbody>
+          </table>
+        </div>
+
+        <p id="count" class="count"></p>
       </section>
 
-      <section class="page" id="recovery">
-        <h1>Recovery Area</h1><p class="subtitle">Deleted candidate records are intended to remain recoverable for 30 days.</p>
-        <div class="panel" style="margin-top:22px"><div class="empty">The 30-day recovery and permanent-deletion workflow has not been connected yet.</div></div>
-        <div class="notice">Recovery will be implemented with server-side permissions and automated retention controls.</div>
+      <section id="candidateFormPanel" class="panel hidden">
+        <h2>Add a candidate</h2>
+        <p class="muted small">
+          Complete the required fields. The record will be saved to Supabase.
+        </p>
+
+        <form id="candidateForm" class="form-grid">
+          <div class="field">
+            <label for="fullName">Full name *</label>
+            <input id="fullName" required maxlength="200">
+          </div>
+
+          <div class="field">
+            <label for="newStatus">Recruitment status *</label>
+            <input id="newStatus" required value="New" maxlength="100">
+          </div>
+
+          <div class="field">
+            <label for="newBranch">Branch *</label>
+            <select id="newBranch" required>
+              <option value="">Choose a branch</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label for="newRecruiter">Recruiter *</label>
+            <select id="newRecruiter" required>
+              <option value="">Choose a recruiter</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label for="licenceCheck">Licence check *</label>
+            <input id="licenceCheck" required value="Pending">
+          </div>
+
+          <div class="field">
+            <label for="creditCheck">Credit check *</label>
+            <input id="creditCheck" required value="Pending">
+          </div>
+
+          <div class="field">
+            <label for="mieCheck">MIE check *</label>
+            <input id="mieCheck" required value="Pending">
+          </div>
+
+          <div class="field full">
+            <label for="notes">Screening notes</label>
+            <textarea id="notes" maxlength="5000"></textarea>
+          </div>
+
+          <div class="actions full">
+            <button id="saveButton" type="submit">Save candidate</button>
+            <button id="cancelFormButton" class="secondary" type="button">
+              Cancel
+            </button>
+          </div>
+        </form>
+
+        <p id="formMessage" class="message hidden" role="status"></p>
       </section>
-    </div>
+    </section>
   </main>
-</div>
-<script>
-function showPage(pageId) {
-  document.querySelectorAll('.page').forEach(function(page) {
-    page.classList.toggle('active', page.id === pageId);
-  });
-  document.querySelectorAll('.nav-item').forEach(function(item) {
-    item.classList.toggle('active', item.dataset.page === pageId);
-  });
-  window.scrollTo(0, 0);
-}
-document.querySelectorAll('[data-page]').forEach(function(button) {
-  button.addEventListener('click', function() { showPage(button.dataset.page); });
-});
-document.querySelectorAll('[data-goto]').forEach(function(button) {
-  button.addEventListener('click', function() { showPage(button.dataset.goto); });
-});
-</script>
+
+  <script type="module">
+    import { createClient } from
+      "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
+
+    const SUPABASE_URL =
+      "https://mlovrosbgesesidlqbth.supabase.co";
+
+    const SUPABASE_PUBLISHABLE_KEY =
+      "sb_publishable_9as4DXTfGM-axP-EdQVbGQ_B-zdUuxg";
+
+    const supabase = createClient(
+      SUPABASE_URL,
+      SUPABASE_PUBLISHABLE_KEY
+    );
+
+    const $ = (id) => document.getElementById(id);
+
+    let currentUser = null;
+    let currentRole = null;
+    let candidates = [];
+    let branches = [];
+    let recruiters = [];
+
+    function setMessage(id, message, isError = false) {
+      const element = $(id);
+      element.textContent = message;
+      element.classList.remove("hidden");
+      element.classList.toggle("error", isError);
+    }
+
+    function escapeHTML(value) {
+      return String(value ?? "").replace(/[&<>"']/g, (char) => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#39;"
+      })[char]);
+    }
+
+    function fillSelect(id, items, firstLabel, selectedValue = "") {
+      const select = $(id);
+      select.replaceChildren();
+
+      const first = document.createElement("option");
+      first.value = "";
+      first.textContent = firstLabel;
+      select.appendChild(first);
+
+      items.forEach((item) => {
+        const option = document.createElement("option");
+        option.value = item.id;
+        option.textContent = item.name;
+        select.appendChild(option);
+      });
+
+      select.value = selectedValue;
+    }
+
+    async function getRole() {
+      const { data, error } = await supabase.rpc("get_my_role");
+
+      if (error) throw error;
+
+      if (data !== "admin" && data !== "assistant") {
+        throw new Error(
+          "Your account has no recognised portal role. Contact an administrator."
+        );
+      }
+
+      return data;
+    }
+
+    async function loadReferenceData() {
+      const [branchResult, recruiterResult] = await Promise.all([
+        supabase.from("branches").select("id, name").order("name"),
+        supabase.from("recruiters").select("id, name").order("name")
+      ]);
+
+      if (branchResult.error) throw branchResult.error;
+      if (recruiterResult.error) throw recruiterResult.error;
+
+      branches = branchResult.data || [];
+      recruiters = recruiterResult.data || [];
+
+      fillSelect("branchFilter", branches, "All branches");
+      fillSelect("recruiterFilter", recruiters, "All recruiters");
+      fillSelect("newBranch", branches, "Choose a branch");
+      fillSelect("newRecruiter", recruiters, "Choose a recruiter");
+    }
+
+    async function loadCandidates() {
+      $("refreshButton").disabled = true;
+      setMessage("listMessage", "Loading candidates...");
+
+      try {
+        const { data, error } = await supabase
+          .from("candidates")
+          .select(
+            "id, full_name, branch_id, recruiter_id, status, " +
+            "licence_check, credit_check, mie_check, created_at, deleted_at"
+          )
+          .is("deleted_at", null)
+          .order("created_at", { ascending: false });
+
+        if (error) throw error;
+
+        candidates = data || [];
+
+        const statuses = [...new Set(
+          candidates.map((candidate) => candidate.status).filter(Boolean)
+        )].sort();
+
+        const previousStatus = $("statusFilter").value;
+        $("statusFilter").replaceChildren();
+
+        const all = document.createElement("option");
+        all.value = "";
+        all.textContent = "All statuses";
+        $("statusFilter").appendChild(all);
+
+        statuses.forEach((status) => {
+          const option = document.createElement("option");
+          option.value = status;
+          option.textContent = status;
+          $("statusFilter").appendChild(option);
+        });
+
+        $("statusFilter").value = statuses.includes(previousStatus)
+          ? previousStatus : "";
+
+        renderCandidates();
+        setMessage("listMessage", "Candidate data loaded successfully.");
+      } catch (error) {
+        candidates = [];
+        renderCandidates();
+        setMessage(
+          "listMessage",
+          "Could not load candidates.\n" +
+          (error.message || "Unknown error"),
+          true
+        );
+      } finally {
+        $("refreshButton").disabled = false;
+      }
+    }
+
+    function renderCandidates() {
+      const search = $("search").value.trim().toLowerCase();
+      const branchId = $("branchFilter").value;
+      const recruiterId = $("recruiterFilter").value;
+      const status = $("statusFilter").value;
+
+      const branchNames = new Map(branches.map((item) => [item.id, item.name]));
+      const recruiterNames = new Map(recruiters.map((item) => [item.id, item.name]));
+
+      const filtered = candidates.filter((candidate) => {
+        return candidate.full_name.toLowerCase().includes(search)
+          && (!branchId || candidate.branch_id === branchId)
+          && (!recruiterId || candidate.recruiter_id === recruiterId)
+          && (!status || candidate.status === status);
+      });
+
+      $("candidateRows").innerHTML = filtered.map((candidate) => `
+        <tr>
+          <td>${escapeHTML(candidate.full_name)}</td>
+          <td>${escapeHTML(branchNames.get(candidate.branch_id) || "Unknown")}</td>
+          <td>${escapeHTML(recruiterNames.get(candidate.recruiter_id) || "Unknown")}</td>
+          <td><span class="status">${escapeHTML(candidate.status)}</span></td>
+          <td>${escapeHTML(candidate.licence_check)}</td>
+          <td>${escapeHTML(candidate.credit_check)}</td>
+          <td>${escapeHTML(candidate.mie_check)}</td>
+        </tr>
+      `).join("");
+
+      $("count").textContent =
+        `Showing ${filtered.length} of ${candidates.length} active candidates.`;
+    }
+
+    async function openPortal() {
+      const { data, error } = await supabase.auth.getSession();
+      if (error) throw error;
+
+      currentUser = data.session?.user || null;
+
+      if (!currentUser) {
+        $("loginPanel").classList.remove("hidden");
+        $("appPanel").classList.add("hidden");
+        $("logoutButton").classList.add("hidden");
+        $("account").textContent = "";
+        return;
+      }
+
+      try {
+        currentRole = await getRole();
+        $("account").textContent =
+          `${currentUser.email} · ${currentRole}`;
+        $("loginPanel").classList.add("hidden");
+        $("appPanel").classList.remove("hidden");
+        $("logoutButton").classList.remove("hidden");
+
+        await loadReferenceData();
+        await loadCandidates();
+      } catch (error) {
+        $("loginPanel").classList.remove("hidden");
+        $("appPanel").classList.add("hidden");
+        setMessage(
+          "loginMessage",
+          "Portal access could not be verified.\n" +
+          (error.message || "Unknown error"),
+          true
+        );
+      }
+    }
+
+    $("loginForm").addEventListener("submit", async (event) => {
+      event.preventDefault();
+      $("loginButton").disabled = true;
+      setMessage("loginMessage", "Signing in...");
+
+      try {
+        const { error } = await supabase.auth.signInWithPassword({
+          email: $("email").value.trim(),
+          password: $("password").value
+        });
+
+        if (error) throw error;
+
+        await openPortal();
+      } catch (error) {
+        setMessage(
+          "loginMessage",
+          "Sign-in failed: " + (error.message || "Unknown error"),
+          true
+        );
+      } finally {
+        $("loginButton").disabled = false;
+      }
+    });
+
+    $("logoutButton").addEventListener("click", async () => {
+      $("logoutButton").disabled = true;
+
+      const { error } = await supabase.auth.signOut();
+
+      if (error) {
+        alert("Sign-out failed: " + error.message);
+      } else {
+        candidates = [];
+        currentUser = null;
+        currentRole = null;
+        $("candidateRows").replaceChildren();
+        $("loginForm").reset();
+        setMessage("loginMessage", "You have signed out.");
+        await openPortal();
+      }
+
+      $("logoutButton").disabled = false;
+    });
+
+    $("showFormButton").addEventListener("click", () => {
+      $("candidateForm").reset();
+      $("newStatus").value = "New";
+      $("licenceCheck").value = "Pending";
+      $("creditCheck").value = "Pending";
+      $("mieCheck").value = "Pending";
+      $("formMessage").classList.add("hidden");
+      $("candidateFormPanel").classList.remove("hidden");
+      $("candidateFormPanel").scrollIntoView({ behavior: "smooth" });
+    });
+
+    $("cancelFormButton").addEventListener("click", () => {
+      $("candidateFormPanel").classList.add("hidden");
+    });
+
+    $("refreshButton").addEventListener("click", loadCandidates);
+
+    ["search", "branchFilter", "recruiterFilter", "statusFilter"]
+      .forEach((id) => $(id).addEventListener(
+        id === "search" ? "input" : "change",
+        renderCandidates
+      ));
+
+    $("candidateForm").addEventListener("submit", async (event) => {
+      event.preventDefault();
+
+      if (!currentUser) {
+        setMessage("formMessage", "Please sign in again.", true);
+        return;
+      }
+
+      $("saveButton").disabled = true;
+      setMessage("formMessage", "Saving candidate...");
+
+      const record = {
+        full_name: $("fullName").value.trim(),
+        branch_id: $("newBranch").value,
+        recruiter_id: $("newRecruiter").value,
+        status: $("newStatus").value.trim(),
+        licence_check: $("licenceCheck").value.trim(),
+        credit_check: $("creditCheck").value.trim(),
+        mie_check: $("mieCheck").value.trim(),
+        screening_notes: $("notes").value.trim() || null,
+        created_by: currentUser.id
+      };
+
+      try {
+        const { error } = await supabase
+          .from("candidates")
+          .insert(record);
+
+        if (error) throw error;
+
+        setMessage("formMessage", "Candidate saved successfully.");
+        $("candidateForm").reset();
+        $("candidateFormPanel").classList.add("hidden");
+        await loadCandidates();
+      } catch (error) {
+        setMessage(
+          "formMessage",
+          "Could not save candidate.\n" +
+          (error.message || "Unknown error"),
+          true
+        );
+      } finally {
+        $("saveButton").disabled = false;
+      }
+    });
+
+    supabase.auth.onAuthStateChange(() => {
+      // Refresh the visible session state after authentication changes.
+      setTimeout(() => openPortal(), 0);
+    });
+
+    openPortal().catch((error) => {
+      setMessage(
+        "loginMessage",
+        "Could not initialise the portal: " +
+        (error.message || "Unknown error"),
+        true
+      );
+    });
+  </script>
 </body>
 </html>
