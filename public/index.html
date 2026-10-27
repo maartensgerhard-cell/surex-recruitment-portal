@@ -2,704 +2,267 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>SureX Recruitment Portal</title>
-
-  <style>
-    :root {
-      --navy: #101820;
-      --panel: #1d2935;
-      --border: #354555;
-      --cyan: #00b8d9;
-      --white: #ffffff;
-      --muted: #b8c5d1;
-      --danger: #ff7979;
-    }
-
-    * { box-sizing: border-box; }
-
-    body {
-      margin: 0;
-      background: var(--navy);
-      color: var(--white);
-      font-family: Arial, sans-serif;
-    }
-
-    button, input, select, textarea { font: inherit; }
-
-    button {
-      border: 0;
-      border-radius: 7px;
-      padding: 11px 15px;
-      background: var(--cyan);
-      color: #07141c;
-      font-weight: bold;
-      cursor: pointer;
-    }
-
-    button:disabled { opacity: .55; cursor: wait; }
-
-    button.secondary {
-      background: #354555;
-      color: white;
-    }
-
-    input, select, textarea {
-      width: 100%;
-      padding: 11px;
-      border: 1px solid #536474;
-      border-radius: 7px;
-      background: #101820;
-      color: white;
-      min-width: 0;
-    }
-
-    label {
-      display: block;
-      margin-bottom: 6px;
-      color: var(--muted);
-      font-size: 13px;
-    }
-
-    .hidden { display: none !important; }
-
-    .topbar {
-      padding: 20px 5%;
-      border-bottom: 1px solid var(--border);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 15px;
-      flex-wrap: wrap;
-    }
-
-    .brand { font-size: 23px; font-weight: bold; }
-    .brand span { color: var(--cyan); }
-    .account { color: var(--muted); font-size: 13px; }
-
-    main {
-      max-width: 1400px;
-      padding: 28px 5%;
-      margin: auto;
-    }
-
-    h1 { font-size: 27px; margin: 0 0 8px; }
-    h2 { font-size: 19px; margin-top: 0; }
-    .muted { color: var(--muted); }
-    .small { font-size: 12px; }
-
-    .panel {
-      background: var(--panel);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 22px;
-      margin-top: 22px;
-    }
-
-    .toolbar {
-      display: grid;
-      grid-template-columns: minmax(200px, 2fr) repeat(3, minmax(140px, 1fr));
-      gap: 12px;
-      margin-top: 20px;
-    }
-
-    .field { min-width: 0; }
-    .field label { margin-top: 0; }
-
-    .actions {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      flex-wrap: wrap;
-    }
-
-    .table-wrap { overflow-x: auto; margin-top: 18px; }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      min-width: 800px;
-    }
-
-    th, td {
-      text-align: left;
-      padding: 13px 12px;
-      border-bottom: 1px solid var(--border);
-      font-size: 13px;
-    }
-
-    th { color: var(--muted); font-weight: normal; }
-    td { overflow-wrap: anywhere; }
-
-    .status {
-      display: inline-block;
-      padding: 5px 8px;
-      background: #30404e;
-      border-radius: 5px;
-    }
-
-    .message {
-      padding: 12px;
-      margin-top: 15px;
-      border-radius: 7px;
-      background: #243744;
-      color: var(--muted);
-      overflow-wrap: anywhere;
-      white-space: pre-wrap;
-    }
-
-    .error { color: var(--danger); }
-
-    #loginPanel {
-      max-width: 440px;
-      margin: 70px auto;
-    }
-
-    #loginPanel input { margin-bottom: 15px; }
-    #loginPanel button { width: 100%; }
-
-    .form-grid {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 16px;
-    }
-
-    .form-grid .full { grid-column: 1 / -1; }
-    .form-grid textarea { min-height: 90px; resize: vertical; }
-    .form-grid button { margin-top: 4px; }
-
-    .count { margin-top: 14px; color: var(--muted); font-size: 13px; }
-
-    @media (max-width: 850px) {
-      .toolbar { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    }
-
-    @media (max-width: 520px) {
-      main { padding: 22px 4%; }
-      .panel { padding: 16px; }
-      .toolbar, .form-grid { grid-template-columns: 1fr; }
-      .form-grid .full { grid-column: auto; }
-      h1 { font-size: 23px; }
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SureX Recruitment Portal</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#101820;color:#fff;font-family:Arial,sans-serif}
+header{padding:20px 5%;border-bottom:1px solid #354555;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.brand{font-size:23px;font-weight:bold}.brand span{color:#00b8d9}
+main{max-width:1400px;margin:auto;padding:25px 5%}
+.panel{background:#1d2935;border:1px solid #354555;border-radius:12px;padding:22px;margin:18px 0}
+h1{font-size:26px}h2{font-size:19px}
+.muted,label{color:#b8c5d1}
+label{display:block;font-size:13px;margin:12px 0 6px}
+input,select,textarea{width:100%;padding:11px;border:1px solid #536474;border-radius:7px;background:#101820;color:white}
+button{padding:11px 14px;border:0;border-radius:7px;background:#00b8d9;color:#07141c;font-weight:bold;cursor:pointer;margin:4px 3px 4px 0}
+button.secondary{background:#354555;color:white}
+button:disabled{opacity:.6}
+.hidden{display:none!important}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.full{grid-column:1/-1}
+.toolbar{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:12px}
+.tablewrap{overflow-x:auto;margin-top:16px}
+table{border-collapse:collapse;width:100%;min-width:850px}
+td,th{text-align:left;padding:12px;border-bottom:1px solid #354555;font-size:13px}
+th{color:#b8c5d1;font-weight:normal}
+.message{background:#243744;padding:12px;border-radius:7px;white-space:pre-wrap;overflow-wrap:anywhere}
+.error{color:#ff8585}
+#loginPanel{max-width:440px;margin:60px auto}
+.small{font-size:12px}
+@media(max-width:800px){.toolbar{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:500px){.grid,.toolbar{grid-template-columns:1fr}.full{grid-column:auto}main{padding:16px 4%}.panel{padding:15px}}
+</style>
 </head>
-
 <body>
-  <header class="topbar">
-    <div class="brand">SureX <span>Recruitment</span></div>
-    <div class="actions">
-      <span id="account" class="account"></span>
-      <button id="logoutButton" class="secondary hidden" type="button">
-        Sign out
-      </button>
+<header>
+  <div class="brand">SureX <span>Recruitment</span></div>
+  <div class="row"><span id="account" class="muted"></span><button id="logout" class="secondary hidden">Sign out</button></div>
+</header>
+<main>
+<section id="loginPanel" class="panel">
+  <h1>Welcome back</h1>
+  <p class="muted">Sign in to the recruitment portal.</p>
+  <form id="loginForm">
+    <label>Email address</label><input id="email" type="email" required autocomplete="username">
+    <label>Password</label><input id="password" type="password" required autocomplete="current-password">
+    <button id="loginButton">Sign in</button>
+  </form>
+  <p id="loginMessage" class="message">Connecting...</p>
+</section>
+
+<section id="app" class="hidden">
+  <h1>Candidate management</h1>
+  <p class="muted">Search, review and update recruitment candidates.</p>
+
+  <section class="panel">
+    <div class="row" style="justify-content:space-between">
+      <h2>Candidates</h2>
+      <div><button id="refresh" class="secondary">Refresh</button><button id="addButton">+ Add candidate</button></div>
     </div>
-  </header>
+    <div class="toolbar">
+      <div><label>Search name</label><input id="search" placeholder="Candidate name"></div>
+      <div><label>Branch</label><select id="branchFilter"><option value="">All branches</option></select></div>
+      <div><label>Recruiter</label><select id="recruiterFilter"><option value="">All recruiters</option></select></div>
+      <div><label>Status</label><select id="statusFilter"><option value="">All statuses</option></select></div>
+    </div>
+    <p id="listMessage" class="message">Loading candidates...</p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Name</th><th>Branch</th><th>Recruiter</th><th>Status</th><th>Licence</th><th>Credit</th><th>MIE</th><th>Action</th></tr></thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </div>
+    <p id="count" class="muted small"></p>
+  </section>
 
-  <main>
-    <section id="loginPanel" class="panel">
-      <h1>Welcome back</h1>
-      <p class="muted">Sign in to access the recruitment portal.</p>
+  <section id="formPanel" class="panel hidden">
+    <h2 id="formTitle">Add candidate</h2>
+    <p class="muted small">Fields marked * are required.</p>
+    <form id="candidateForm" class="grid">
+      <div><label>Full name *</label><input id="fullName" required maxlength="200"></div>
+      <div><label>Status *</label><input id="status" required maxlength="100" value="New"></div>
+      <div><label>Branch *</label><select id="branch" required></select></div>
+      <div><label>Recruiter *</label><select id="recruiter" required></select></div>
+      <div><label>Licence check *</label><input id="licence" required value="Pending"></div>
+      <div><label>Credit check *</label><input id="credit" required value="Pending"></div>
+      <div><label>MIE check *</label><input id="mie" required value="Pending"></div>
+      <div class="full"><label>Screening notes</label><textarea id="notes" rows="4" maxlength="5000"></textarea></div>
+      <div class="full row"><button id="saveButton">Save candidate</button><button id="cancel" type="button" class="secondary">Cancel</button></div>
+    </form>
+    <p id="formMessage" class="message hidden"></p>
+  </section>
+</section>
+</main>
 
-      <form id="loginForm">
-        <label for="email">Email address</label>
-        <input id="email" type="email" autocomplete="username" required>
+<script type="module">
+import {createClient} from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
 
-        <label for="password">Password</label>
-        <input id="password" type="password"
-          autocomplete="current-password" required>
+const supabase=createClient(
+  "https://mlovrosbgesesidlqbth.supabase.co",
+  "sb_publishable_9as4DXTfGM-axP-EdQVbGQ_B-zdUuxg"
+);
+const $=id=>document.getElementById(id);
+let user=null,role=null,branches=[],recruiters=[],candidates=[],editingId=null;
 
-        <button id="loginButton" type="submit">Sign in</button>
-      </form>
-
-      <p id="loginMessage" class="message" role="status">
-        Connecting to the portal...
-      </p>
-    </section>
-
-    <section id="appPanel" class="hidden">
-      <div>
-        <h1>Candidate management</h1>
-        <p class="muted">
-          View, search and manage recruitment candidates.
-        </p>
-      </div>
-
-      <section class="panel">
-        <div class="actions" style="justify-content:space-between">
-          <div>
-            <h2 style="margin-bottom:5px">Candidates</h2>
-            <span class="muted small">Live data from Supabase</span>
-          </div>
-          <div class="actions">
-            <button id="refreshButton" class="secondary" type="button">
-              Refresh
-            </button>
-            <button id="showFormButton" type="button">
-              + Add candidate
-            </button>
-          </div>
-        </div>
-
-        <div class="toolbar">
-          <div class="field">
-            <label for="search">Search candidate</label>
-            <input id="search" type="search"
-              placeholder="Type a candidate name">
-          </div>
-
-          <div class="field">
-            <label for="branchFilter">Branch</label>
-            <select id="branchFilter">
-              <option value="">All branches</option>
-            </select>
-          </div>
-
-          <div class="field">
-            <label for="recruiterFilter">Recruiter</label>
-            <select id="recruiterFilter">
-              <option value="">All recruiters</option>
-            </select>
-          </div>
-
-          <div class="field">
-            <label for="statusFilter">Status</label>
-            <select id="statusFilter">
-              <option value="">All statuses</option>
-            </select>
-          </div>
-        </div>
-
-        <p id="listMessage" class="message" role="status">
-          Loading candidates...
-        </p>
-
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Candidate</th>
-                <th>Branch</th>
-                <th>Recruiter</th>
-                <th>Status</th>
-                <th>Licence</th>
-                <th>Credit</th>
-                <th>MIE</th>
-              </tr>
-            </thead>
-            <tbody id="candidateRows"></tbody>
-          </table>
-        </div>
-
-        <p id="count" class="count"></p>
-      </section>
-
-      <section id="candidateFormPanel" class="panel hidden">
-        <h2>Add a candidate</h2>
-        <p class="muted small">
-          Complete the required fields. The record will be saved to Supabase.
-        </p>
-
-        <form id="candidateForm" class="form-grid">
-          <div class="field">
-            <label for="fullName">Full name *</label>
-            <input id="fullName" required maxlength="200">
-          </div>
-
-          <div class="field">
-            <label for="newStatus">Recruitment status *</label>
-            <input id="newStatus" required value="New" maxlength="100">
-          </div>
-
-          <div class="field">
-            <label for="newBranch">Branch *</label>
-            <select id="newBranch" required>
-              <option value="">Choose a branch</option>
-            </select>
-          </div>
-
-          <div class="field">
-            <label for="newRecruiter">Recruiter *</label>
-            <select id="newRecruiter" required>
-              <option value="">Choose a recruiter</option>
-            </select>
-          </div>
-
-          <div class="field">
-            <label for="licenceCheck">Licence check *</label>
-            <input id="licenceCheck" required value="Pending">
-          </div>
-
-          <div class="field">
-            <label for="creditCheck">Credit check *</label>
-            <input id="creditCheck" required value="Pending">
-          </div>
-
-          <div class="field">
-            <label for="mieCheck">MIE check *</label>
-            <input id="mieCheck" required value="Pending">
-          </div>
-
-          <div class="field full">
-            <label for="notes">Screening notes</label>
-            <textarea id="notes" maxlength="5000"></textarea>
-          </div>
-
-          <div class="actions full">
-            <button id="saveButton" type="submit">Save candidate</button>
-            <button id="cancelFormButton" class="secondary" type="button">
-              Cancel
-            </button>
-          </div>
-        </form>
-
-        <p id="formMessage" class="message hidden" role="status"></p>
-      </section>
-    </section>
-  </main>
-
-  <script type="module">
-    import { createClient } from
-      "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
-
-    const SUPABASE_URL =
-      "https://mlovrosbgesesidlqbth.supabase.co";
-
-    const SUPABASE_PUBLISHABLE_KEY =
-      "sb_publishable_9as4DXTfGM-axP-EdQVbGQ_B-zdUuxg";
-
-    const supabase = createClient(
-      SUPABASE_URL,
-      SUPABASE_PUBLISHABLE_KEY
-    );
-
-    const $ = (id) => document.getElementById(id);
-
-    let currentUser = null;
-    let currentRole = null;
-    let candidates = [];
-    let branches = [];
-    let recruiters = [];
-
-    function setMessage(id, message, isError = false) {
-      const element = $(id);
-      element.textContent = message;
-      element.classList.remove("hidden");
-      element.classList.toggle("error", isError);
+function msg(id,text,error=false){
+  $(id).textContent=text;
+  $(id).classList.remove("hidden");
+  $(id).classList.toggle("error",error);
+}
+function esc(v){
+  return String(v??"").replace(/[&<>"']/g,c=>({
+    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+  })[c]);
+}
+function fillSelect(id,items,first){
+  const s=$(id);s.replaceChildren();
+  const opt=document.createElement("option");opt.value="";opt.textContent=first;s.append(opt);
+  items.forEach(x=>{const o=document.createElement("option");o.value=x.id;o.textContent=x.name;s.append(o);});
+}
+async function verifyRole(){
+  const {data,error}=await supabase.rpc("get_my_role");
+  if(error)throw error;
+  if(!["admin","assistant"].includes(data))throw Error("No recognised role is assigned to this account.");
+  return data;
+}
+async function loadReferenceData(){
+  const [b,r]=await Promise.all([
+    supabase.from("branches").select("id,name").order("name"),
+    supabase.from("recruiters").select("id,name").order("name")
+  ]);
+  if(b.error)throw b.error;if(r.error)throw r.error;
+  branches=b.data||[];recruiters=r.data||[];
+  fillSelect("branchFilter",branches,"All branches");
+  fillSelect("recruiterFilter",recruiters,"All recruiters");
+  fillSelect("branch",branches,"Choose branch");
+  fillSelect("recruiter",recruiters,"Choose recruiter");
+}
+async function loadCandidates(){
+  $("refresh").disabled=true;
+  msg("listMessage","Loading candidates...");
+  try{
+    const {data,error}=await supabase.from("candidates")
+      .select("id,full_name,branch_id,recruiter_id,status,licence_check,credit_check,mie_check,screening_notes,deleted_at")
+      .is("deleted_at",null).order("created_at",{ascending:false});
+    if(error)throw error;
+    candidates=data||[];
+    const old=$("statusFilter").value;
+    const statuses=[...new Set(candidates.map(c=>c.status).filter(Boolean))].sort();
+    $("statusFilter").replaceChildren();
+    const all=document.createElement("option");all.value="";all.textContent="All statuses";$("statusFilter").append(all);
+    statuses.forEach(s=>{const o=document.createElement("option");o.value=s;o.textContent=s;$("statusFilter").append(o);});
+    $("statusFilter").value=statuses.includes(old)?old:"";
+    render();
+    msg("listMessage","Candidate data loaded.");
+  }catch(e){
+    candidates=[];render();msg("listMessage","Could not load candidates: "+e.message,true);
+  }finally{$("refresh").disabled=false;}
+}
+function render(){
+  const bn=new Map(branches.map(x=>[x.id,x.name]));
+  const rn=new Map(recruiters.map(x=>[x.id,x.name]));
+  const search=$("search").value.trim().toLowerCase();
+  const b=$("branchFilter").value,r=$("recruiterFilter").value,s=$("statusFilter").value;
+  const list=candidates.filter(c=>c.full_name.toLowerCase().includes(search)&&(!b||c.branch_id===b)&&(!r||c.recruiter_id===r)&&(!s||c.status===s));
+  $("rows").innerHTML=list.map(c=>`<tr>
+    <td>${esc(c.full_name)}</td><td>${esc(bn.get(c.branch_id)||"Unknown")}</td>
+    <td>${esc(rn.get(c.recruiter_id)||"Unknown")}</td><td>${esc(c.status)}</td>
+    <td>${esc(c.licence_check)}</td><td>${esc(c.credit_check)}</td><td>${esc(c.mie_check)}</td>
+    <td><button data-edit="${esc(c.id)}">Edit</button></td></tr>`).join("");
+  $("count").textContent=`Showing ${list.length} of ${candidates.length} active candidates.`;
+}
+function openForm(candidate=null){
+  editingId=candidate?.id||null;
+  $("candidateForm").reset();
+  $("formTitle").textContent=editingId?"Edit candidate":"Add candidate";
+  $("saveButton").textContent=editingId?"Save changes":"Save candidate";
+  $("status").value=candidate?.status||"New";
+  $("licence").value=candidate?.licence_check||"Pending";
+  $("credit").value=candidate?.credit_check||"Pending";
+  $("mie").value=candidate?.mie_check||"Pending";
+  $("fullName").value=candidate?.full_name||"";
+  $("branch").value=candidate?.branch_id||"";
+  $("recruiter").value=candidate?.recruiter_id||"";
+  $("notes").value=candidate?.screening_notes||"";
+  $("formMessage").classList.add("hidden");
+  $("formPanel").classList.remove("hidden");
+  $("formPanel").scrollIntoView({behavior:"smooth"});
+}
+async function openPortal(){
+  const {data,error}=await supabase.auth.getSession();if(error)throw error;
+  user=data.session?.user||null;
+  $("loginPanel").classList.toggle("hidden",!!user);
+  $("app").classList.toggle("hidden",!user);
+  $("logout").classList.toggle("hidden",!user);
+  if(!user){$("account").textContent="";return;}
+  try{
+    role=await verifyRole();
+    $("account").textContent=user.email+" · "+role;
+    await loadReferenceData();await loadCandidates();
+  }catch(e){
+    $("app").classList.add("hidden");$("loginPanel").classList.remove("hidden");
+    msg("loginMessage","Portal access error: "+e.message,true);
+  }
+}
+$("loginForm").addEventListener("submit",async e=>{
+  e.preventDefault();$("loginButton").disabled=true;
+  msg("loginMessage","Signing in...");
+  try{
+    const {error}=await supabase.auth.signInWithPassword({email:$("email").value.trim(),password:$("password").value});
+    if(error)throw error;await openPortal();
+  }catch(e){msg("loginMessage","Sign-in failed: "+e.message,true);}
+  finally{$("loginButton").disabled=false;}
+});
+$("logout").addEventListener("click",async()=>{
+  const {error}=await supabase.auth.signOut();
+  if(error){alert(error.message);return;}
+  $("loginForm").reset();await openPortal();
+});
+$("addButton").addEventListener("click",()=>openForm());
+$("cancel").addEventListener("click",()=>{$("formPanel").classList.add("hidden");editingId=null;});
+$("refresh").addEventListener("click",loadCandidates);
+["search","branchFilter","recruiterFilter","statusFilter"].forEach(id=>
+  $(id).addEventListener(id==="search"?"input":"change",render)
+);
+$("rows").addEventListener("click",e=>{
+  const button=e.target.closest("button[data-edit]");
+  if(!button)return;
+  const candidate=candidates.find(c=>c.id===button.dataset.edit);
+  if(candidate)openForm(candidate);
+});
+$("candidateForm").addEventListener("submit",async e=>{
+  e.preventDefault();$("saveButton").disabled=true;
+  msg("formMessage",editingId?"Updating candidate...":"Saving candidate...");
+  const record={
+    full_name:$("fullName").value.trim(),
+    status:$("status").value.trim(),
+    branch_id:$("branch").value,
+    recruiter_id:$("recruiter").value,
+    licence_check:$("licence").value.trim(),
+    credit_check:$("credit").value.trim(),
+    mie_check:$("mie").value.trim(),
+    screening_notes:$("notes").value.trim()||null
+  };
+  try{
+    let result;
+    if(editingId){
+      result=await supabase.from("candidates").update(record).eq("id",editingId).select("id");
+    }else{
+      result=await supabase.from("candidates").insert({...record,created_by:user.id}).select("id");
     }
-
-    function escapeHTML(value) {
-      return String(value ?? "").replace(/[&<>"']/g, (char) => ({
-        "&": "&amp;",
-        "<": "&lt;",
-        ">": "&gt;",
-        '"': "&quot;",
-        "'": "&#39;"
-      })[char]);
-    }
-
-    function fillSelect(id, items, firstLabel, selectedValue = "") {
-      const select = $(id);
-      select.replaceChildren();
-
-      const first = document.createElement("option");
-      first.value = "";
-      first.textContent = firstLabel;
-      select.appendChild(first);
-
-      items.forEach((item) => {
-        const option = document.createElement("option");
-        option.value = item.id;
-        option.textContent = item.name;
-        select.appendChild(option);
-      });
-
-      select.value = selectedValue;
-    }
-
-    async function getRole() {
-      const { data, error } = await supabase.rpc("get_my_role");
-
-      if (error) throw error;
-
-      if (data !== "admin" && data !== "assistant") {
-        throw new Error(
-          "Your account has no recognised portal role. Contact an administrator."
-        );
-      }
-
-      return data;
-    }
-
-    async function loadReferenceData() {
-      const [branchResult, recruiterResult] = await Promise.all([
-        supabase.from("branches").select("id, name").order("name"),
-        supabase.from("recruiters").select("id, name").order("name")
-      ]);
-
-      if (branchResult.error) throw branchResult.error;
-      if (recruiterResult.error) throw recruiterResult.error;
-
-      branches = branchResult.data || [];
-      recruiters = recruiterResult.data || [];
-
-      fillSelect("branchFilter", branches, "All branches");
-      fillSelect("recruiterFilter", recruiters, "All recruiters");
-      fillSelect("newBranch", branches, "Choose a branch");
-      fillSelect("newRecruiter", recruiters, "Choose a recruiter");
-    }
-
-    async function loadCandidates() {
-      $("refreshButton").disabled = true;
-      setMessage("listMessage", "Loading candidates...");
-
-      try {
-        const { data, error } = await supabase
-          .from("candidates")
-          .select(
-            "id, full_name, branch_id, recruiter_id, status, " +
-            "licence_check, credit_check, mie_check, created_at, deleted_at"
-          )
-          .is("deleted_at", null)
-          .order("created_at", { ascending: false });
-
-        if (error) throw error;
-
-        candidates = data || [];
-
-        const statuses = [...new Set(
-          candidates.map((candidate) => candidate.status).filter(Boolean)
-        )].sort();
-
-        const previousStatus = $("statusFilter").value;
-        $("statusFilter").replaceChildren();
-
-        const all = document.createElement("option");
-        all.value = "";
-        all.textContent = "All statuses";
-        $("statusFilter").appendChild(all);
-
-        statuses.forEach((status) => {
-          const option = document.createElement("option");
-          option.value = status;
-          option.textContent = status;
-          $("statusFilter").appendChild(option);
-        });
-
-        $("statusFilter").value = statuses.includes(previousStatus)
-          ? previousStatus : "";
-
-        renderCandidates();
-        setMessage("listMessage", "Candidate data loaded successfully.");
-      } catch (error) {
-        candidates = [];
-        renderCandidates();
-        setMessage(
-          "listMessage",
-          "Could not load candidates.\n" +
-          (error.message || "Unknown error"),
-          true
-        );
-      } finally {
-        $("refreshButton").disabled = false;
-      }
-    }
-
-    function renderCandidates() {
-      const search = $("search").value.trim().toLowerCase();
-      const branchId = $("branchFilter").value;
-      const recruiterId = $("recruiterFilter").value;
-      const status = $("statusFilter").value;
-
-      const branchNames = new Map(branches.map((item) => [item.id, item.name]));
-      const recruiterNames = new Map(recruiters.map((item) => [item.id, item.name]));
-
-      const filtered = candidates.filter((candidate) => {
-        return candidate.full_name.toLowerCase().includes(search)
-          && (!branchId || candidate.branch_id === branchId)
-          && (!recruiterId || candidate.recruiter_id === recruiterId)
-          && (!status || candidate.status === status);
-      });
-
-      $("candidateRows").innerHTML = filtered.map((candidate) => `
-        <tr>
-          <td>${escapeHTML(candidate.full_name)}</td>
-          <td>${escapeHTML(branchNames.get(candidate.branch_id) || "Unknown")}</td>
-          <td>${escapeHTML(recruiterNames.get(candidate.recruiter_id) || "Unknown")}</td>
-          <td><span class="status">${escapeHTML(candidate.status)}</span></td>
-          <td>${escapeHTML(candidate.licence_check)}</td>
-          <td>${escapeHTML(candidate.credit_check)}</td>
-          <td>${escapeHTML(candidate.mie_check)}</td>
-        </tr>
-      `).join("");
-
-      $("count").textContent =
-        `Showing ${filtered.length} of ${candidates.length} active candidates.`;
-    }
-
-    async function openPortal() {
-      const { data, error } = await supabase.auth.getSession();
-      if (error) throw error;
-
-      currentUser = data.session?.user || null;
-
-      if (!currentUser) {
-        $("loginPanel").classList.remove("hidden");
-        $("appPanel").classList.add("hidden");
-        $("logoutButton").classList.add("hidden");
-        $("account").textContent = "";
-        return;
-      }
-
-      try {
-        currentRole = await getRole();
-        $("account").textContent =
-          `${currentUser.email} · ${currentRole}`;
-        $("loginPanel").classList.add("hidden");
-        $("appPanel").classList.remove("hidden");
-        $("logoutButton").classList.remove("hidden");
-
-        await loadReferenceData();
-        await loadCandidates();
-      } catch (error) {
-        $("loginPanel").classList.remove("hidden");
-        $("appPanel").classList.add("hidden");
-        setMessage(
-          "loginMessage",
-          "Portal access could not be verified.\n" +
-          (error.message || "Unknown error"),
-          true
-        );
-      }
-    }
-
-    $("loginForm").addEventListener("submit", async (event) => {
-      event.preventDefault();
-      $("loginButton").disabled = true;
-      setMessage("loginMessage", "Signing in...");
-
-      try {
-        const { error } = await supabase.auth.signInWithPassword({
-          email: $("email").value.trim(),
-          password: $("password").value
-        });
-
-        if (error) throw error;
-
-        await openPortal();
-      } catch (error) {
-        setMessage(
-          "loginMessage",
-          "Sign-in failed: " + (error.message || "Unknown error"),
-          true
-        );
-      } finally {
-        $("loginButton").disabled = false;
-      }
-    });
-
-    $("logoutButton").addEventListener("click", async () => {
-      $("logoutButton").disabled = true;
-
-      const { error } = await supabase.auth.signOut();
-
-      if (error) {
-        alert("Sign-out failed: " + error.message);
-      } else {
-        candidates = [];
-        currentUser = null;
-        currentRole = null;
-        $("candidateRows").replaceChildren();
-        $("loginForm").reset();
-        setMessage("loginMessage", "You have signed out.");
-        await openPortal();
-      }
-
-      $("logoutButton").disabled = false;
-    });
-
-    $("showFormButton").addEventListener("click", () => {
-      $("candidateForm").reset();
-      $("newStatus").value = "New";
-      $("licenceCheck").value = "Pending";
-      $("creditCheck").value = "Pending";
-      $("mieCheck").value = "Pending";
-      $("formMessage").classList.add("hidden");
-      $("candidateFormPanel").classList.remove("hidden");
-      $("candidateFormPanel").scrollIntoView({ behavior: "smooth" });
-    });
-
-    $("cancelFormButton").addEventListener("click", () => {
-      $("candidateFormPanel").classList.add("hidden");
-    });
-
-    $("refreshButton").addEventListener("click", loadCandidates);
-
-    ["search", "branchFilter", "recruiterFilter", "statusFilter"]
-      .forEach((id) => $(id).addEventListener(
-        id === "search" ? "input" : "change",
-        renderCandidates
-      ));
-
-    $("candidateForm").addEventListener("submit", async (event) => {
-      event.preventDefault();
-
-      if (!currentUser) {
-        setMessage("formMessage", "Please sign in again.", true);
-        return;
-      }
-
-      $("saveButton").disabled = true;
-      setMessage("formMessage", "Saving candidate...");
-
-      const record = {
-        full_name: $("fullName").value.trim(),
-        branch_id: $("newBranch").value,
-        recruiter_id: $("newRecruiter").value,
-        status: $("newStatus").value.trim(),
-        licence_check: $("licenceCheck").value.trim(),
-        credit_check: $("creditCheck").value.trim(),
-        mie_check: $("mieCheck").value.trim(),
-        screening_notes: $("notes").value.trim() || null,
-        created_by: currentUser.id
-      };
-
-      try {
-        const { error } = await supabase
-          .from("candidates")
-          .insert(record);
-
-        if (error) throw error;
-
-        setMessage("formMessage", "Candidate saved successfully.");
-        $("candidateForm").reset();
-        $("candidateFormPanel").classList.add("hidden");
-        await loadCandidates();
-      } catch (error) {
-        setMessage(
-          "formMessage",
-          "Could not save candidate.\n" +
-          (error.message || "Unknown error"),
-          true
-        );
-      } finally {
-        $("saveButton").disabled = false;
-      }
-    });
-
-    supabase.auth.onAuthStateChange(() => {
-      // Refresh the visible session state after authentication changes.
-      setTimeout(() => openPortal(), 0);
-    });
-
-    openPortal().catch((error) => {
-      setMessage(
-        "loginMessage",
-        "Could not initialise the portal: " +
-        (error.message || "Unknown error"),
-        true
-      );
-    });
-  </script>
+    if(result.error)throw result.error;
+    if(!result.data?.length)throw Error("No record was updated. Check your permissions and try again.");
+    msg("formMessage",editingId?"Candidate updated successfully.":"Candidate saved successfully.");
+    $("formPanel").classList.add("hidden");editingId=null;
+    await loadCandidates();
+  }catch(e){msg("formMessage","Save failed: "+e.message,true);}
+  finally{$("saveButton").disabled=false;}
+});
+supabase.auth.onAuthStateChange(()=>setTimeout(()=>openPortal(),0));
+openPortal().catch(e=>msg("loginMessage","Could not start portal: "+e.message,true));
+</script>
 </body>
 </html>
