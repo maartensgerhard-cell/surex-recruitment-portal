@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SureX Recruitment | Login Test</title>
+  <title>SureX Recruitment | Role Test</title>
   <style>
     * { box-sizing: border-box; }
 
@@ -21,7 +21,7 @@
 
     .panel {
       width: 100%;
-      max-width: 420px;
+      max-width: 440px;
       padding: 32px;
       background: #1d2935;
       border: 1px solid #354555;
@@ -71,13 +71,13 @@
 
     .note { font-size: 12px; }
 
-    #dbResult { white-space: pre-wrap; }
+    #result { white-space: pre-wrap; }
   </style>
 </head>
 <body>
   <main class="panel">
     <h1>SureX Recruitment</h1>
-    <p>Login and database connection test</p>
+    <p>Login and role verification test</p>
 
     <form id="loginForm">
       <label for="email">Email address</label>
@@ -99,8 +99,8 @@
       <button id="loginButton" type="submit">Sign in</button>
     </form>
 
-    <button id="dbButton" type="button" hidden>
-      Test recruiter database access
+    <button id="roleButton" type="button" hidden>
+      Check my database role
     </button>
 
     <button id="logoutButton" type="button" hidden>
@@ -108,7 +108,7 @@
     </button>
 
     <p id="message" role="status">Checking connection...</p>
-    <p id="dbResult" role="status"></p>
+    <p id="result" role="status"></p>
 
     <p class="note">
       Test page only. Do not enter candidate information here.
@@ -126,10 +126,10 @@
       "sb_publishable_9as4DXTfGM-axP-EdQVbGQ_B-zdUuxg";
 
     const message = document.getElementById("message");
-    const dbResult = document.getElementById("dbResult");
+    const result = document.getElementById("result");
     const form = document.getElementById("loginForm");
     const loginButton = document.getElementById("loginButton");
-    const dbButton = document.getElementById("dbButton");
+    const roleButton = document.getElementById("roleButton");
     const logoutButton = document.getElementById("logoutButton");
 
     const supabase = createClient(
@@ -149,12 +149,12 @@
       const user = data.session?.user;
 
       form.hidden = Boolean(user);
-      dbButton.hidden = !user;
+      roleButton.hidden = !user;
       logoutButton.hidden = !user;
 
       message.textContent = user
         ? "Signed in as " + user.email +
-          ". You can now test recruiter database access."
+          ". You can now check your database role."
         : "Enter your account details to test login.";
     }
 
@@ -163,7 +163,7 @@
 
       loginButton.disabled = true;
       message.textContent = "Signing in...";
-      dbResult.textContent = "";
+      result.textContent = "";
 
       try {
         const { error } = await supabase.auth.signInWithPassword({
@@ -184,32 +184,31 @@
       }
     });
 
-    dbButton.addEventListener("click", async () => {
-      dbButton.disabled = true;
-      dbResult.textContent = "Testing recruiters table access...";
+    roleButton.addEventListener("click", async () => {
+      roleButton.disabled = true;
+      result.textContent = "Checking your database role...";
 
       try {
-        const { data, error } = await supabase
-          .from("recruiters")
-          .select("id")
-          .limit(1);
+        const { data, error } = await supabase.rpc("get_my_role");
 
         if (error) {
-          dbResult.textContent =
-            "Database test failed.\n" +
+          result.textContent =
+            "Role check failed.\n" +
             "Code: " + (error.code || "unknown") + "\n" +
             "Message: " + error.message;
+        } else if (data === "admin" || data === "assistant") {
+          result.textContent =
+            "Role check successful!\nYour database role is: " + data;
         } else {
-          dbResult.textContent =
-            "Recruiter database read successful!\n" +
-            "The signed-in user can read the recruiters table.\n" +
-            "Rows returned: " + data.length;
+          result.textContent =
+            "The role function returned: " + JSON.stringify(data) +
+            "\nCheck the user's entry in public.user_roles.";
         }
       } catch {
-        dbResult.textContent =
-          "Could not reach the database. Check your connection.";
+        result.textContent =
+          "Could not reach Supabase. Check your connection.";
       } finally {
-        dbButton.disabled = false;
+        roleButton.disabled = false;
       }
     });
 
@@ -218,8 +217,7 @@
 
       const { error } = await supabase.auth.signOut();
 
-      dbResult.textContent = "";
-
+      result.textContent = "";
       message.textContent = error
         ? "Sign out failed: " + error.message
         : "Signed out successfully.";
