@@ -18,14 +18,14 @@ label{display:block;font-size:13px;margin:12px 0 6px}
 input,select,textarea{width:100%;padding:11px;border:1px solid #536474;border-radius:7px;background:#101820;color:white}
 button{padding:11px 14px;border:0;border-radius:7px;background:#00b8d9;color:#07141c;font-weight:bold;cursor:pointer;margin:4px 3px 4px 0}
 button.secondary{background:#354555;color:white}
-button:disabled{opacity:.6}
+button:disabled{opacity:.6;cursor:wait}
 .hidden{display:none!important}
 .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
 .full{grid-column:1/-1}
 .toolbar{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:12px}
 .tablewrap{overflow-x:auto;margin-top:16px}
-table{border-collapse:collapse;width:100%;min-width:850px}
+table{border-collapse:collapse;width:100%;min-width:900px}
 td,th{text-align:left;padding:12px;border-bottom:1px solid #354555;font-size:13px}
 th{color:#b8c5d1;font-weight:normal}
 .message{background:#243744;padding:12px;border-radius:7px;white-space:pre-wrap;overflow-wrap:anywhere}
@@ -39,18 +39,24 @@ th{color:#b8c5d1;font-weight:normal}
 <body>
 <header>
   <div class="brand">SureX <span>Recruitment</span></div>
-  <div class="row"><span id="account" class="muted"></span><button id="logout" class="secondary hidden">Sign out</button></div>
+  <div class="row">
+    <span id="account" class="muted"></span>
+    <button id="logout" class="secondary hidden" type="button">Sign out</button>
+  </div>
 </header>
+
 <main>
 <section id="loginPanel" class="panel">
   <h1>Welcome back</h1>
   <p class="muted">Sign in to the recruitment portal.</p>
   <form id="loginForm">
-    <label>Email address</label><input id="email" type="email" required autocomplete="username">
-    <label>Password</label><input id="password" type="password" required autocomplete="current-password">
-    <button id="loginButton">Sign in</button>
+    <label for="email">Email address</label>
+    <input id="email" type="email" required autocomplete="username">
+    <label for="password">Password</label>
+    <input id="password" type="password" required autocomplete="current-password">
+    <button id="loginButton" type="submit">Sign in</button>
   </form>
-  <p id="loginMessage" class="message">Connecting...</p>
+  <p id="loginMessage" class="message" role="status">Connecting...</p>
 </section>
 
 <section id="app" class="hidden">
@@ -60,18 +66,41 @@ th{color:#b8c5d1;font-weight:normal}
   <section class="panel">
     <div class="row" style="justify-content:space-between">
       <h2>Candidates</h2>
-      <div><button id="refresh" class="secondary">Refresh</button><button id="addButton">+ Add candidate</button></div>
+      <div>
+        <button id="refresh" class="secondary" type="button">Refresh</button>
+        <button id="addButton" type="button">+ Add candidate</button>
+      </div>
     </div>
+
     <div class="toolbar">
-      <div><label>Search name</label><input id="search" placeholder="Candidate name"></div>
-      <div><label>Branch</label><select id="branchFilter"><option value="">All branches</option></select></div>
-      <div><label>Recruiter</label><select id="recruiterFilter"><option value="">All recruiters</option></select></div>
-      <div><label>Status</label><select id="statusFilter"><option value="">All statuses</option></select></div>
+      <div>
+        <label for="search">Search name</label>
+        <input id="search" type="search" placeholder="Candidate name">
+      </div>
+      <div>
+        <label for="branchFilter">Branch</label>
+        <select id="branchFilter"><option value="">All branches</option></select>
+      </div>
+      <div>
+        <label for="recruiterFilter">Recruiter</label>
+        <select id="recruiterFilter"><option value="">All recruiters</option></select>
+      </div>
+      <div>
+        <label for="statusFilter">Status</label>
+        <select id="statusFilter"><option value="">All statuses</option></select>
+      </div>
     </div>
-    <p id="listMessage" class="message">Loading candidates...</p>
+
+    <p id="listMessage" class="message" role="status">Loading candidates...</p>
+
     <div class="tablewrap">
       <table>
-        <thead><tr><th>Name</th><th>Branch</th><th>Recruiter</th><th>Status</th><th>Licence</th><th>Credit</th><th>MIE</th><th>Action</th></tr></thead>
+        <thead>
+          <tr>
+            <th>Name</th><th>Branch</th><th>Recruiter</th>
+            <th>Status</th><th>Licence</th><th>Credit</th><th>MIE</th><th>Action</th>
+          </tr>
+        </thead>
         <tbody id="rows"></tbody>
       </table>
     </div>
@@ -80,19 +109,57 @@ th{color:#b8c5d1;font-weight:normal}
 
   <section id="formPanel" class="panel hidden">
     <h2 id="formTitle">Add candidate</h2>
-    <p class="muted small">Fields marked * are required.</p>
+    <p class="muted small">Complete all required fields.</p>
+
     <form id="candidateForm" class="grid">
-      <div><label>Full name *</label><input id="fullName" required maxlength="200"></div>
-      <div><label>Status *</label><input id="status" required maxlength="100" value="New"></div>
-      <div><label>Branch *</label><select id="branch" required></select></div>
-      <div><label>Recruiter *</label><select id="recruiter" required></select></div>
-      <div><label>Licence check *</label><input id="licence" required value="Pending"></div>
-      <div><label>Credit check *</label><input id="credit" required value="Pending"></div>
-      <div><label>MIE check *</label><input id="mie" required value="Pending"></div>
-      <div class="full"><label>Screening notes</label><textarea id="notes" rows="4" maxlength="5000"></textarea></div>
-      <div class="full row"><button id="saveButton">Save candidate</button><button id="cancel" type="button" class="secondary">Cancel</button></div>
+      <div>
+        <label for="fullName">Full name *</label>
+        <input id="fullName" required maxlength="200">
+      </div>
+
+      <div>
+        <label for="status">Status *</label>
+        <select id="status" required>
+          <option value="New">New</option>
+          <option value="Documents Outstanding">Documents Outstanding</option>
+          <option value="Ready for Submission">Ready for Submission</option>
+          <option value="Submitted to Head Office">Submitted to Head Office</option>
+          <option value="Approved">Approved</option>
+          <option value="Declined">Declined</option>
+          <option value="Deleted">Deleted</option>
+        </select>
+      </div>
+
+      <div>
+        <label for="branch">Branch *</label>
+        <select id="branch" required></select>
+      </div>
+      <div>
+        <label for="recruiter">Recruiter *</label>
+        <select id="recruiter" required></select>
+      </div>
+      <div>
+        <label for="licence">Licence check *</label>
+        <input id="licence" required value="Pending" maxlength="100">
+      </div>
+      <div>
+        <label for="credit">Credit check *</label>
+        <input id="credit" required value="Pending" maxlength="100">
+      </div>
+      <div>
+        <label for="mie">MIE check *</label>
+        <input id="mie" required value="Pending" maxlength="100">
+      </div>
+      <div class="full">
+        <label for="notes">Screening notes</label>
+        <textarea id="notes" rows="4" maxlength="5000"></textarea>
+      </div>
+      <div class="full row">
+        <button id="saveButton" type="submit">Save candidate</button>
+        <button id="cancel" type="button" class="secondary">Cancel</button>
+      </div>
     </form>
-    <p id="formMessage" class="message hidden"></p>
+    <p id="formMessage" class="message hidden" role="status"></p>
   </section>
 </section>
 </main>
@@ -100,169 +167,351 @@ th{color:#b8c5d1;font-weight:normal}
 <script type="module">
 import {createClient} from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
 
-const supabase=createClient(
+const supabase = createClient(
   "https://mlovrosbgesesidlqbth.supabase.co",
   "sb_publishable_9as4DXTfGM-axP-EdQVbGQ_B-zdUuxg"
 );
-const $=id=>document.getElementById(id);
-let user=null,role=null,branches=[],recruiters=[],candidates=[],editingId=null;
 
-function msg(id,text,error=false){
-  $(id).textContent=text;
+const $ = id => document.getElementById(id);
+
+let user = null;
+let role = null;
+let branches = [];
+let recruiters = [];
+let candidates = [];
+let editingId = null;
+
+const VALID_STATUSES = [
+  "New",
+  "Documents Outstanding",
+  "Ready for Submission",
+  "Submitted to Head Office",
+  "Approved",
+  "Declined",
+  "Deleted"
+];
+
+function msg(id, text, isError = false) {
+  $(id).textContent = text;
   $(id).classList.remove("hidden");
-  $(id).classList.toggle("error",error);
+  $(id).classList.toggle("error", isError);
 }
-function esc(v){
-  return String(v??"").replace(/[&<>"']/g,c=>({
-    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
-  })[c]);
+
+function fillSelect(id, items, firstLabel) {
+  const select = $(id);
+  select.replaceChildren();
+
+  const first = document.createElement("option");
+  first.value = "";
+  first.textContent = firstLabel;
+  select.appendChild(first);
+
+  items.forEach(item => {
+    const option = document.createElement("option");
+    option.value = item.id;
+    option.textContent = item.name;
+    select.appendChild(option);
+  });
 }
-function fillSelect(id,items,first){
-  const s=$(id);s.replaceChildren();
-  const opt=document.createElement("option");opt.value="";opt.textContent=first;s.append(opt);
-  items.forEach(x=>{const o=document.createElement("option");o.value=x.id;o.textContent=x.name;s.append(o);});
-}
-async function verifyRole(){
-  const {data,error}=await supabase.rpc("get_my_role");
-  if(error)throw error;
-  if(!["admin","assistant"].includes(data))throw Error("No recognised role is assigned to this account.");
+
+async function verifyRole() {
+  const {data, error} = await supabase.rpc("get_my_role");
+  if (error) throw error;
+
+  if (!["admin", "assistant"].includes(data)) {
+    throw new Error("No recognised role is assigned to this account.");
+  }
+
   return data;
 }
-async function loadReferenceData(){
-  const [b,r]=await Promise.all([
+
+async function loadReferenceData() {
+  const [branchResult, recruiterResult] = await Promise.all([
     supabase.from("branches").select("id,name").order("name"),
     supabase.from("recruiters").select("id,name").order("name")
   ]);
-  if(b.error)throw b.error;if(r.error)throw r.error;
-  branches=b.data||[];recruiters=r.data||[];
-  fillSelect("branchFilter",branches,"All branches");
-  fillSelect("recruiterFilter",recruiters,"All recruiters");
-  fillSelect("branch",branches,"Choose branch");
-  fillSelect("recruiter",recruiters,"Choose recruiter");
+
+  if (branchResult.error) throw branchResult.error;
+  if (recruiterResult.error) throw recruiterResult.error;
+
+  branches = branchResult.data || [];
+  recruiters = recruiterResult.data || [];
+
+  fillSelect("branchFilter", branches, "All branches");
+  fillSelect("recruiterFilter", recruiters, "All recruiters");
+  fillSelect("branch", branches, "Choose branch");
+  fillSelect("recruiter", recruiters, "Choose recruiter");
 }
-async function loadCandidates(){
-  $("refresh").disabled=true;
-  msg("listMessage","Loading candidates...");
-  try{
-    const {data,error}=await supabase.from("candidates")
-      .select("id,full_name,branch_id,recruiter_id,status,licence_check,credit_check,mie_check,screening_notes,deleted_at")
-      .is("deleted_at",null).order("created_at",{ascending:false});
-    if(error)throw error;
-    candidates=data||[];
-    const old=$("statusFilter").value;
-    const statuses=[...new Set(candidates.map(c=>c.status).filter(Boolean))].sort();
+
+async function loadCandidates(successMessage = "") {
+  $("refresh").disabled = true;
+  msg("listMessage", "Loading candidates...");
+
+  try {
+    const {data, error} = await supabase
+      .from("candidates")
+      .select(
+        "id,full_name,branch_id,recruiter_id,status," +
+        "licence_check,credit_check,mie_check,screening_notes," +
+        "deleted_at,created_at"
+      )
+      .is("deleted_at", null)
+      .order("created_at", {ascending: false});
+
+    if (error) throw error;
+
+    candidates = data || [];
+
+    const previousStatus = $("statusFilter").value;
+    const statuses = [...new Set(
+      candidates.map(c => c.status).filter(Boolean)
+    )].sort();
+
     $("statusFilter").replaceChildren();
-    const all=document.createElement("option");all.value="";all.textContent="All statuses";$("statusFilter").append(all);
-    statuses.forEach(s=>{const o=document.createElement("option");o.value=s;o.textContent=s;$("statusFilter").append(o);});
-    $("statusFilter").value=statuses.includes(old)?old:"";
-    render();
-    msg("listMessage","Candidate data loaded.");
-  }catch(e){
-    candidates=[];render();msg("listMessage","Could not load candidates: "+e.message,true);
-  }finally{$("refresh").disabled=false;}
-}
-function render(){
-  const bn=new Map(branches.map(x=>[x.id,x.name]));
-  const rn=new Map(recruiters.map(x=>[x.id,x.name]));
-  const search=$("search").value.trim().toLowerCase();
-  const b=$("branchFilter").value,r=$("recruiterFilter").value,s=$("statusFilter").value;
-  const list=candidates.filter(c=>c.full_name.toLowerCase().includes(search)&&(!b||c.branch_id===b)&&(!r||c.recruiter_id===r)&&(!s||c.status===s));
-  $("rows").innerHTML=list.map(c=>`<tr>
-    <td>${esc(c.full_name)}</td><td>${esc(bn.get(c.branch_id)||"Unknown")}</td>
-    <td>${esc(rn.get(c.recruiter_id)||"Unknown")}</td><td>${esc(c.status)}</td>
-    <td>${esc(c.licence_check)}</td><td>${esc(c.credit_check)}</td><td>${esc(c.mie_check)}</td>
-    <td><button data-edit="${esc(c.id)}">Edit</button></td></tr>`).join("");
-  $("count").textContent=`Showing ${list.length} of ${candidates.length} active candidates.`;
-}
-function openForm(candidate=null){
-  editingId=candidate?.id||null;
-  $("candidateForm").reset();
-  $("formTitle").textContent=editingId?"Edit candidate":"Add candidate";
-  $("saveButton").textContent=editingId?"Save changes":"Save candidate";
-  $("status").value=candidate?.status||"New";
-  $("licence").value=candidate?.licence_check||"Pending";
-  $("credit").value=candidate?.credit_check||"Pending";
-  $("mie").value=candidate?.mie_check||"Pending";
-  $("fullName").value=candidate?.full_name||"";
-  $("branch").value=candidate?.branch_id||"";
-  $("recruiter").value=candidate?.recruiter_id||"";
-  $("notes").value=candidate?.screening_notes||"";
-  $("formMessage").classList.add("hidden");
-  $("formPanel").classList.remove("hidden");
-  $("formPanel").scrollIntoView({behavior:"smooth"});
-}
-async function openPortal(){
-  const {data,error}=await supabase.auth.getSession();if(error)throw error;
-  user=data.session?.user||null;
-  $("loginPanel").classList.toggle("hidden",!!user);
-  $("app").classList.toggle("hidden",!user);
-  $("logout").classList.toggle("hidden",!user);
-  if(!user){$("account").textContent="";return;}
-  try{
-    role=await verifyRole();
-    $("account").textContent=user.email+" · "+role;
-    await loadReferenceData();await loadCandidates();
-  }catch(e){
-    $("app").classList.add("hidden");$("loginPanel").classList.remove("hidden");
-    msg("loginMessage","Portal access error: "+e.message,true);
+
+    const all = document.createElement("option");
+    all.value = "";
+    all.textContent = "All statuses";
+    $("statusFilter").appendChild(all);
+
+    statuses.forEach(status => {
+      const option = document.createElement("option");
+      option.value = status;
+      option.textContent = status;
+      $("statusFilter").appendChild(option);
+    });
+
+    $("statusFilter").value = statuses.includes(previousStatus)
+      ? previousStatus : "";
+
+    renderCandidates();
+    msg("listMessage", successMessage || "Candidate data loaded successfully.");
+  } catch (error) {
+    candidates = [];
+    renderCandidates();
+    msg("listMessage", "Could not load candidates: " + error.message, true);
+  } finally {
+    $("refresh").disabled = false;
   }
 }
-$("loginForm").addEventListener("submit",async e=>{
-  e.preventDefault();$("loginButton").disabled=true;
-  msg("loginMessage","Signing in...");
-  try{
-    const {error}=await supabase.auth.signInWithPassword({email:$("email").value.trim(),password:$("password").value});
-    if(error)throw error;await openPortal();
-  }catch(e){msg("loginMessage","Sign-in failed: "+e.message,true);}
-  finally{$("loginButton").disabled=false;}
-});
-$("logout").addEventListener("click",async()=>{
-  const {error}=await supabase.auth.signOut();
-  if(error){alert(error.message);return;}
-  $("loginForm").reset();await openPortal();
-});
-$("addButton").addEventListener("click",()=>openForm());
-$("cancel").addEventListener("click",()=>{$("formPanel").classList.add("hidden");editingId=null;});
-$("refresh").addEventListener("click",loadCandidates);
-["search","branchFilter","recruiterFilter","statusFilter"].forEach(id=>
-  $(id).addEventListener(id==="search"?"input":"change",render)
-);
-$("rows").addEventListener("click",e=>{
-  const button=e.target.closest("button[data-edit]");
-  if(!button)return;
-  const candidate=candidates.find(c=>c.id===button.dataset.edit);
-  if(candidate)openForm(candidate);
-});
-$("candidateForm").addEventListener("submit",async e=>{
-  e.preventDefault();$("saveButton").disabled=true;
-  msg("formMessage",editingId?"Updating candidate...":"Saving candidate...");
-  const record={
-    full_name:$("fullName").value.trim(),
-    status:$("status").value.trim(),
-    branch_id:$("branch").value,
-    recruiter_id:$("recruiter").value,
-    licence_check:$("licence").value.trim(),
-    credit_check:$("credit").value.trim(),
-    mie_check:$("mie").value.trim(),
-    screening_notes:$("notes").value.trim()||null
-  };
-  try{
-    let result;
-    if(editingId){
-      result=await supabase.from("candidates").update(record).eq("id",editingId).select("id");
-    }else{
-      result=await supabase.from("candidates").insert({...record,created_by:user.id}).select("id");
-    }
-    if(result.error)throw result.error;
-    if(!result.data?.length)throw Error("No record was updated. Check your permissions and try again.");
-    msg("formMessage",editingId?"Candidate updated successfully.":"Candidate saved successfully.");
-    $("formPanel").classList.add("hidden");editingId=null;
+
+function renderCandidates() {
+  const branchNames = new Map(branches.map(x => [x.id, x.name]));
+  const recruiterNames = new Map(recruiters.map(x => [x.id, x.name]));
+
+  const search = $("search").value.trim().toLowerCase();
+  const branchId = $("branchFilter").value;
+  const recruiterId = $("recruiterFilter").value;
+  const status = $("statusFilter").value;
+
+  const filtered = candidates.filter(candidate =>
+    (candidate.full_name || "").toLowerCase().includes(search) &&
+    (!branchId || candidate.branch_id === branchId) &&
+    (!recruiterId || candidate.recruiter_id === recruiterId) &&
+    (!status || candidate.status === status)
+  );
+
+  $("rows").innerHTML = filtered.map(candidate => `
+    <tr>
+      <td>${escapeHTML(candidate.full_name)}</td>
+      <td>${escapeHTML(branchNames.get(candidate.branch_id) || "Unknown")}</td>
+      <td>${escapeHTML(recruiterNames.get(candidate.recruiter_id) || "Unknown")}</td>
+      <td>${escapeHTML(candidate.status)}</td>
+      <td>${escapeHTML(candidate.licence_check)}</td>
+      <td>${escapeHTML(candidate.credit_check)}</td>
+      <td>${escapeHTML(candidate.mie_check)}</td>
+      <td><button type="button" data-edit="${escapeHTML(candidate.id)}">Edit</button></td>
+    </tr>
+  `).join("");
+
+  $("count").textContent =
+    `Showing ${filtered.length} of ${candidates.length} active candidates.`;
+}
+
+function escapeHTML(value) {
+  return String(value ?? "").replace(/[&<>"']/g, char => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#39;"
+  })[char]);
+}
+
+function openForm(candidate = null) {
+  editingId = candidate ? candidate.id : null;
+  $("candidateForm").reset();
+
+  $("formTitle").textContent = editingId ? "Edit candidate" : "Add candidate";
+  $("saveButton").textContent = editingId ? "Save changes" : "Save candidate";
+
+  $("fullName").value = candidate?.full_name || "";
+  $("status").value = VALID_STATUSES.includes(candidate?.status)
+    ? candidate.status : "New";
+  $("branch").value = candidate?.branch_id || "";
+  $("recruiter").value = candidate?.recruiter_id || "";
+  $("licence").value = candidate?.licence_check || "Pending";
+  $("credit").value = candidate?.credit_check || "Pending";
+  $("mie").value = candidate?.mie_check || "Pending";
+  $("notes").value = candidate?.screening_notes || "";
+
+  $("formMessage").classList.add("hidden");
+  $("formPanel").classList.remove("hidden");
+  $("formPanel").scrollIntoView({behavior: "smooth"});
+}
+
+async function openPortal() {
+  const {data, error} = await supabase.auth.getSession();
+  if (error) throw error;
+
+  user = data.session?.user || null;
+
+  $("loginPanel").classList.toggle("hidden", !!user);
+  $("app").classList.toggle("hidden", !user);
+  $("logout").classList.toggle("hidden", !user);
+
+  if (!user) {
+    $("account").textContent = "";
+    return;
+  }
+
+  try {
+    role = await verifyRole();
+    $("account").textContent = `${user.email} · ${role}`;
+    await loadReferenceData();
     await loadCandidates();
-  }catch(e){msg("formMessage","Save failed: "+e.message,true);}
-  finally{$("saveButton").disabled=false;}
+  } catch (error) {
+    $("app").classList.add("hidden");
+    $("loginPanel").classList.remove("hidden");
+    msg("loginMessage", "Portal access error: " + error.message, true);
+  }
+}
+
+$("loginForm").addEventListener("submit", async event => {
+  event.preventDefault();
+  $("loginButton").disabled = true;
+  msg("loginMessage", "Signing in...");
+
+  try {
+    const {error} = await supabase.auth.signInWithPassword({
+      email: $("email").value.trim(),
+      password: $("password").value
+    });
+
+    if (error) throw error;
+    await openPortal();
+  } catch (error) {
+    msg("loginMessage", "Sign-in failed: " + error.message, true);
+  } finally {
+    $("loginButton").disabled = false;
+  }
 });
-supabase.auth.onAuthStateChange(()=>setTimeout(()=>openPortal(),0));
-openPortal().catch(e=>msg("loginMessage","Could not start portal: "+e.message,true));
+
+$("logout").addEventListener("click", async () => {
+  const {error} = await supabase.auth.signOut();
+
+  if (error) {
+    alert("Sign-out failed: " + error.message);
+    return;
+  }
+
+  user = null;
+  role = null;
+  candidates = [];
+  $("candidateForm").reset();
+  $("formPanel").classList.add("hidden");
+  $("loginForm").reset();
+  await openPortal();
+});
+
+$("addButton").addEventListener("click", () => openForm());
+
+$("cancel").addEventListener("click", () => {
+  editingId = null;
+  $("formPanel").classList.add("hidden");
+});
+
+$("refresh").addEventListener("click", () => loadCandidates());
+
+["search", "branchFilter", "recruiterFilter", "statusFilter"].forEach(id => {
+  $(id).addEventListener(id === "search" ? "input" : "change", renderCandidates);
+});
+
+$("rows").addEventListener("click", event => {
+  const button = event.target.closest("button[data-edit]");
+  if (!button) return;
+
+  const candidate = candidates.find(c => c.id === button.dataset.edit);
+  if (candidate) openForm(candidate);
+});
+
+$("candidateForm").addEventListener("submit", async event => {
+  event.preventDefault();
+
+  if (!user) {
+    msg("formMessage", "Please sign in again.", true);
+    return;
+  }
+
+  $("saveButton").disabled = true;
+  const wasEditing = Boolean(editingId);
+  msg("formMessage", wasEditing ? "Updating candidate..." : "Saving candidate...");
+
+  const record = {
+    full_name: $("fullName").value.trim(),
+    status: $("status").value,
+    branch_id: $("branch").value,
+    recruiter_id: $("recruiter").value,
+    licence_check: $("licence").value.trim(),
+    credit_check: $("credit").value.trim(),
+    mie_check: $("mie").value.trim(),
+    screening_notes: $("notes").value.trim() || null
+  };
+
+  try {
+    let result;
+
+    if (wasEditing) {
+      record.updated_at = new Date().toISOString();
+
+      result = await supabase
+        .from("candidates")
+        .update(record)
+        .eq("id", editingId)
+        .select("id");
+    } else {
+      result = await supabase
+        .from("candidates")
+        .insert({...record, created_by: user.id})
+        .select("id");
+    }
+
+    if (result.error) throw result.error;
+
+    if (!result.data || result.data.length === 0) {
+      throw new Error("No candidate was saved. Check your permissions and try again.");
+    }
+
+    editingId = null;
+    $("formPanel").classList.add("hidden");
+
+    await loadCandidates(
+      wasEditing ? "Candidate updated successfully." : "Candidate saved successfully."
+    );
+  } catch (error) {
+    msg("formMessage", "Save failed: " + error.message, true);
+  } finally {
+    $("saveButton").disabled = false;
+  }
+});
+
+supabase.auth.onAuthStateChange(() => {
+  setTimeout(() => openPortal(), 0);
+});
+
+openPortal().catch(error => {
+  msg("loginMessage", "Could not start portal: " + error.message, true);
+});
 </script>
 </body>
 </html>
