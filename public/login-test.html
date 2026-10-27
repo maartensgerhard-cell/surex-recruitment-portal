@@ -8,56 +8,35 @@
   <style>
     * { box-sizing: border-box; }
     body {
-      margin: 0;
-      min-height: 100vh;
-      display: grid;
-      place-items: center;
-      padding: 20px;
-      background: #101820;
-      font-family: Arial, sans-serif;
-      color: #fff;
+      margin: 0; min-height: 100vh; display: grid; place-items: center;
+      padding: 20px; background: #101820;
+      font-family: Arial, sans-serif; color: #fff;
     }
     .panel {
-      width: 100%;
-      max-width: 420px;
-      padding: 32px;
-      background: #1d2935;
-      border: 1px solid #354555;
-      border-radius: 14px;
+      width: 100%; max-width: 420px; padding: 32px;
+      background: #1d2935; border: 1px solid #354555; border-radius: 14px;
     }
     h1 { margin-top: 0; font-size: 25px; }
-    p { color: #b8c5d1; line-height: 1.5; }
+    p { color: #b8c5d1; line-height: 1.5; overflow-wrap: anywhere; }
     label { display: block; margin: 18px 0 7px; }
     input {
-      width: 100%;
-      padding: 12px;
-      border: 1px solid #536474;
-      border-radius: 7px;
-      background: #101820;
-      color: white;
-      font-size: 16px;
+      width: 100%; padding: 12px; border: 1px solid #536474;
+      border-radius: 7px; background: #101820; color: white; font-size: 16px;
     }
     button {
-      width: 100%;
-      padding: 13px;
-      margin-top: 18px;
-      border: 0;
-      border-radius: 7px;
-      background: #00b8d9;
-      color: #07141c;
-      font-weight: bold;
-      font-size: 15px;
-      cursor: pointer;
+      width: 100%; padding: 13px; margin-top: 18px; border: 0;
+      border-radius: 7px; background: #00b8d9; color: #07141c;
+      font-weight: bold; font-size: 15px; cursor: pointer;
     }
     button:disabled { opacity: .6; cursor: wait; }
-    #message { overflow-wrap: anywhere; }
     .note { font-size: 12px; }
+    #dbResult { white-space: pre-wrap; }
   </style>
 </head>
 <body>
   <main class="panel">
     <h1>SureX Recruitment</h1>
-    <p>Login connection test</p>
+    <p>Login and database connection test</p>
 
     <form id="loginForm">
       <label for="email">Email address</label>
@@ -70,8 +49,11 @@
       <button id="loginButton" type="submit">Sign in</button>
     </form>
 
+    <button id="dbButton" type="button" hidden>Test database access</button>
     <button id="logoutButton" type="button" hidden>Sign out</button>
-    <p id="message" role="status">Configure the Supabase settings to begin.</p>
+
+    <p id="message" role="status">Checking configuration...</p>
+    <p id="dbResult" role="status"></p>
     <p class="note">Test page only. Do not enter candidate information here.</p>
   </main>
 
@@ -79,92 +61,107 @@
     import { createClient } from
       "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
 
-    // Replace these two placeholders with your Supabase Project URL
-    // and Publishable key. Never use a Secret or service-role key here.
     const SUPABASE_URL = "https://mlovrosbgesesidlqbth.supabase.co";
-    const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_9as4DXTfGM-axP-EdQVbGQ_B-zdUuxg";
+    const SUPABASE_PUBLISHABLE_KEY =
+      "sb_publishable_9as4DXTfGM-axP-EdQVbGQ_B-zdUuxg";
 
     const message = document.getElementById("message");
+    const dbResult = document.getElementById("dbResult");
     const form = document.getElementById("loginForm");
     const loginButton = document.getElementById("loginButton");
+    const dbButton = document.getElementById("dbButton");
     const logoutButton = document.getElementById("logoutButton");
 
-    if (
-      SUPABASE_URL.includes("PASTE_") ||
-      SUPABASE_PUBLISHABLE_KEY.includes("PASTE_")
-    ) {
-      message.textContent =
-        "Setup required: add the Supabase Project URL and Publishable key in this file.";
-    } else {
-      const supabase = createClient(
-        SUPABASE_URL,
-        SUPABASE_PUBLISHABLE_KEY
-      );
+    const supabase = createClient(
+      SUPABASE_URL,
+      SUPABASE_PUBLISHABLE_KEY
+    );
 
-      const showSession = async () => {
-        const { data, error } = await supabase.auth.getSession();
+    async function showSession() {
+      const { data, error } = await supabase.auth.getSession();
 
-        if (error) {
-          message.textContent = "Session check failed: " + error.message;
-          return;
-        }
+      if (error) {
+        message.textContent = "Session check failed: " + error.message;
+        return;
+      }
 
-        const user = data.session?.user;
+      const user = data.session?.user;
 
-        if (user) {
-          form.hidden = true;
-          logoutButton.hidden = false;
-          message.textContent =
-            "Login successful for " + user.email +
-            ". This confirms authentication only; portal access is not yet enabled.";
-        } else {
-          form.hidden = false;
-          logoutButton.hidden = true;
-          message.textContent = "Enter your account details to test login.";
-        }
-      };
+      form.hidden = Boolean(user);
+      dbButton.hidden = !user;
+      logoutButton.hidden = !user;
 
-      form.addEventListener("submit", async (event) => {
-        event.preventDefault();
-        loginButton.disabled = true;
-        message.textContent = "Signing in...";
+      message.textContent = user
+        ? "Signed in as " + user.email + ". You can now test database access."
+        : "Enter your account details to test login.";
+    }
 
-        try {
-          const { error } = await supabase.auth.signInWithPassword({
-            email: document.getElementById("email").value.trim(),
-            password: document.getElementById("password").value
-          });
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      loginButton.disabled = true;
+      message.textContent = "Signing in...";
+      dbResult.textContent = "";
 
-          if (error) {
-            message.textContent = "Login failed: " + error.message;
-          } else {
-            await showSession();
-          }
-        } catch {
-          message.textContent =
-            "Could not reach Supabase. Check your connection and settings.";
-        } finally {
-          loginButton.disabled = false;
-        }
-      });
-
-      logoutButton.addEventListener("click", async () => {
-        logoutButton.disabled = true;
-
-        const { error } = await supabase.auth.signOut();
+      try {
+        const { error } = await supabase.auth.signInWithPassword({
+          email: document.getElementById("email").value.trim(),
+          password: document.getElementById("password").value
+        });
 
         if (error) {
-          message.textContent = "Sign out failed: " + error.message;
+          message.textContent = "Login failed: " + error.message;
         } else {
-          message.textContent = "Signed out successfully.";
           await showSession();
         }
+      } catch {
+        message.textContent = "Could not reach Supabase. Check your connection.";
+      } finally {
+        loginButton.disabled = false;
+      }
+    });
 
-        logoutButton.disabled = false;
-      });
+    dbButton.addEventListener("click", async () => {
+      dbButton.disabled = true;
+      dbResult.textContent = "Testing branches table access...";
 
-      showSession();
-    }
+      try {
+        const { data, error } = await supabase
+          .from("branches")
+          .select("id")
+          .limit(1);
+
+        if (error) {
+          dbResult.textContent =
+            "Database test failed.\nCode: " + (error.code || "unknown") +
+            "\nMessage: " + error.message;
+        } else {
+          dbResult.textContent =
+            "Database read successful!\n" +
+            "The signed-in user can read the branches table.\n" +
+            "Rows returned: " + data.length;
+        }
+      } catch {
+        dbResult.textContent =
+          "Could not reach the database. Check your connection.";
+      } finally {
+        dbButton.disabled = false;
+      }
+    });
+
+    logoutButton.addEventListener("click", async () => {
+      logoutButton.disabled = true;
+      const { error } = await supabase.auth.signOut();
+
+      dbResult.textContent = "";
+      message.textContent = error
+        ? "Sign out failed: " + error.message
+        : "Signed out successfully.";
+
+      await showSession();
+      logoutButton.disabled = false;
+    });
+
+    showSession();
   </script>
 </body>
 </html>
