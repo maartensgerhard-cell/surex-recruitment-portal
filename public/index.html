@@ -543,6 +543,22 @@ async function uploadCandidateDocument() {
     $("documentFile").value = "";
     msg("uploadMessage", "SUCCESS: " + result.message + "\\nSaved in Dropbox: " + result.dropboxPath);
     await loadCandidateDocuments(editingId);
+
+    // Uploading the Driver's Licence document automatically marks the check as Received.
+    if (documentType === "Driver's Licence") {
+      const {error: licenceUpdateError} = await supabase
+        .from("candidates")
+        .update({licence_check: "Received", updated_at: new Date().toISOString()})
+        .eq("id", editingId);
+      if (licenceUpdateError) {
+        throw new Error("The licence file was uploaded, but the Licence Check could not be updated: " + licenceUpdateError.message);
+      }
+      const candidateWithLicence = candidates.find(item => item.id === editingId);
+      if (candidateWithLicence) candidateWithLicence.licence_check = "Received";
+      $("licence").value = "Received";
+      msg("uploadMessage", "SUCCESS: Driver's Licence uploaded. Licence Check automatically changed to Received.\\nSaved in Dropbox: " + result.dropboxPath);
+    }
+
     const current = candidates.find(item => item.id === editingId);
     await updateAutomaticCandidateStatus(
       editingId,
