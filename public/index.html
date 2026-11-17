@@ -120,9 +120,9 @@ th{color:#b8c5d1;font-weight:normal}
       <div>
         <label for="status">Status *</label>
         <select id="status" required>
-          <option value="New">New</option>
-          <option value="Documents Outstanding">Documents Outstanding</option>
-          <option value="Ready for Submission">Ready for Submission</option>
+          <option value="New" disabled>New (automatic)</option>
+          <option value="Documents Outstanding" disabled>Documents Outstanding (automatic)</option>
+          <option value="Ready for Submission" disabled>Ready for Submission (automatic)</option>
           <option value="Submitted to Head Office">Submitted to Head Office</option>
           <option value="Approved">Approved</option>
           <option value="Declined">Declined</option>
@@ -364,6 +364,33 @@ function hasMieScreeningDocument() {
   return currentCandidateDocuments.some(doc => doc.document_type === "MIE Screening");
 }
 
+const AUTOMATIC_STATUSES = ["New", "Documents Outstanding", "Ready for Submission"];
+const MANUAL_STATUSES = ["Submitted to Head Office", "Approved", "Declined"];
+
+function calculateCandidateStatus(mieValue, documents) {
+  if (!isMieCleared(mieValue)) return "New";
+  const uploadedTypes = new Set((documents || []).map(doc => doc.document_type));
+  return REQUIRED_DOCUMENTS.every(type => uploadedTypes.has(type))
+    ? "Ready for Submission"
+    : "Documents Outstanding";
+}
+
+async function updateAutomaticCandidateStatus(candidateId, mieValue, documents, currentStatus) {
+  if (currentStatus && !AUTOMATIC_STATUSES.includes(currentStatus)) return currentStatus;
+  const nextStatus = calculateCandidateStatus(mieValue, documents);
+  if (nextStatus === currentStatus) return currentStatus;
+
+  const {error} = await supabase
+    .from("candidates")
+    .update({status: nextStatus, updated_at: new Date().toISOString()})
+    .eq("id", candidateId);
+  if (error) throw error;
+
+  const candidate = candidates.find(item => item.id === candidateId);
+  if (candidate) candidate.status = nextStatus;
+  return nextStatus;
+}
+
 const REQUIRED_DOCUMENTS = [
   "MIE Screening",
   "ID",
@@ -499,6 +526,13 @@ async function uploadCandidateDocument() {
     $("documentFile").value = "";
     msg("uploadMessage", "SUCCESS: " + result.message + "\\nSaved in Dropbox: " + result.dropboxPath);
     await loadCandidateDocuments(editingId);
+    const current = candidates.find(item => item.id === editingId);
+    await updateAutomaticCandidateStatus(
+      editingId,
+      $("mie").value,
+      currentCandidateDocuments,
+      current?.status || "New"
+    );
   } catch (error) {
     msg("uploadMessage", "Upload failed: " + error.message, true);
   } finally {
@@ -693,6 +727,14 @@ $("candidateForm").addEventListener("submit", async event => {
     mie_check: $("mie").value.trim(),
     screening_notes: $("notes").value.trim() || null
   };
+
+  const existingCandidate = wasEditing ? candidates.find(item => item.id === editingId) : null;
+  const selectedStatus = $("status").value;
+  record.status = wasEditing && MANUAL_STATUSES.includes(selectedStatus)
+    ? selectedStatus
+    : wasEditing
+      ? calculateCandidateStatus(record.mie_check, currentCandidateDocuments)
+      : "New";
 
   try {
     let result;
