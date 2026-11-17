@@ -467,6 +467,22 @@ async function loadCandidateDocuments(candidateId) {
     if (error) throw error;
 
     currentCandidateDocuments = data || [];
+
+    // Reconcile the Licence Check for documents uploaded before automatic tracking was added.
+    const hasDriversLicence = currentCandidateDocuments.some(doc =>
+      doc.document_type === "Driver's Licence" || doc.document_type === "Drivers Licence"
+    );
+    const currentCandidate = candidates.find(item => item.id === candidateId);
+    if (hasDriversLicence && currentCandidate && currentCandidate.licence_check !== "Received") {
+      const {error: licenceUpdateError} = await supabase
+        .from("candidates")
+        .update({licence_check: "Received", updated_at: new Date().toISOString()})
+        .eq("id", candidateId);
+      if (licenceUpdateError) throw licenceUpdateError;
+      currentCandidate.licence_check = "Received";
+      $("licence").value = "Received";
+    }
+
     updateDocumentControls($("mie").value);
     renderDocumentChecklist();
 
