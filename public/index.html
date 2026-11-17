@@ -151,6 +151,10 @@ th{color:#b8c5d1;font-weight:normal}
         <input id="mie" required value="Pending" maxlength="100">
       </div>
       <div class="full">
+        <label>Dropbox candidate folder</label>
+        <p id="dropboxPath" class="message small">A folder will be created automatically when you save a new candidate.</p>
+      </div>
+      <div class="full">
         <label for="notes">Screening notes</label>
         <textarea id="notes" rows="4" maxlength="5000"></textarea>
       </div>
@@ -253,7 +257,7 @@ async function loadCandidates(successMessage = "") {
       .select(
         "id,full_name,branch_id,recruiter_id,status," +
         "licence_check,credit_check,mie_check,screening_notes," +
-        "deleted_at,created_at"
+        "deleted_at,created_at,dropbox_folder_path"
       )
       .is("deleted_at", null)
       .order("created_at", {ascending: false});
@@ -293,6 +297,34 @@ async function loadCandidates(successMessage = "") {
   } finally {
     $("refresh").disabled = false;
   }
+}
+
+
+async function createDropboxFolder(candidateName) {
+  const {data, error} = await supabase.auth.getSession();
+  if (error) throw error;
+
+  const accessToken = data.session?.access_token;
+  if (!accessToken) throw new Error("Your session has expired. Please sign in again.");
+
+  const response = await fetch("/.netlify/functions/dropbox-create-folder", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${accessToken}`
+    },
+    body: JSON.stringify({candidateName})
+  });
+
+  const result = await response.json();
+  if (!response.ok) {
+    throw new Error(result.error || "Dropbox folder creation failed.");
+  }
+  if (!result.folderPath) {
+    throw new Error("Dropbox did not return a folder location.");
+  }
+
+  return result.folderPath;
 }
 
 function renderCandidates() {
@@ -354,6 +386,7 @@ function openForm(candidate = null) {
   $("credit").value = candidate?.credit_check || "Pending";
   $("mie").value = candidate?.mie_check || "Pending";
   $("notes").value = candidate?.screening_notes || "";
+  $("dropboxPath").textContent = candidate?.dropbox_folder_path || (editingId ? "No Dropbox folder recorded for this candidate yet." : "A Dropbox folder will be created automatically when you save this candidate.");
 
   $("formMessage").classList.add("hidden");
   $("formPanel").classList.remove("hidden");
@@ -492,12 +525,34 @@ $("candidateForm").addEventListener("submit", async event => {
       throw new Error("No candidate was saved. Check your permissions and try again.");
     }
 
+    let successMessage = wasEditing
+      ? "Candidate updated successfully."
+      : "Candidate saved successfully.";
+
+    if (!wasEditing) {
+      const newCandidateId = result.data[0].id;
+
+      try {
+        const folderPath = await createDropboxFolder(record.full_name);
+        const {error: folderSaveError} = await supabase
+          .from("candidates")
+          .update({
+            dropbox_folder_path: folderPath,
+            updated_at: new Date().toISOString()
+          })
+          .eq("id", newCandidateId);
+
+        if (folderSaveError) throw folderSaveError;
+        successMessage = "Candidate saved and Dropbox folder created successfully.\\nDropbox path: " + folderPath;
+      } catch (folderError) {
+        successMessage = "Candidate saved, but Dropbox folder creation was not completed.\\nReason: " + folderError.message + "\\nYou can retry the folder creation after this step.";
+      }
+    }
+
     editingId = null;
     $("formPanel").classList.add("hidden");
 
-    await loadCandidates(
-      wasEditing ? "Candidate updated successfully." : "Candidate saved successfully."
-    );
+    await loadCandidates(successMessage);
   } catch (error) {
     msg("formMessage", "Save failed: " + error.message, true);
   } finally {
