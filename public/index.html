@@ -203,6 +203,11 @@ th{color:#b8c5d1;font-weight:normal}
           <button id="uploadDocumentButton" type="button">Upload document to Dropbox</button>
         </div>
         <p id="uploadMessage" class="message small hidden" role="status"></p>
+        <div id="candidatePackArea" class="hidden">
+          <button id="downloadPackButton" type="button">Download Candidate Pack (ZIP)</button>
+          <p id="packMessage" class="message small hidden" role="status"></p>
+          <p class="muted small">Downloads all seven required documents in one ZIP file for email to Head Office.</p>
+        </div>
         <h3 class="small">Document checklist</h3>
         <div id="documentChecklist" class="message small">Open a candidate to view document requirements.</div>
         <h3 class="small">Uploaded documents</h3>
@@ -476,6 +481,59 @@ function updateDocumentControls(mieValue) {
   }
 }
 
+function updateCandidatePackButton(candidateId) {
+  const candidate = candidates.find(item => item.id === candidateId);
+  const uploadedTypes = new Set(currentCandidateDocuments.map(doc => doc.document_type));
+  const complete = REQUIRED_DOCUMENTS.every(type => uploadedTypes.has(type));
+  const ready = candidate?.status === "Ready for Submission" && complete;
+  $("candidatePackArea").classList.toggle("hidden", !ready);
+  $("packMessage").classList.add("hidden");
+}
+
+async function downloadCandidatePack() {
+  if (!editingId || !user) return;
+  const candidate = candidates.find(item => item.id === editingId);
+  if (!candidate || candidate.status !== "Ready for Submission") {
+    msg("packMessage", "The candidate must be Ready for Submission before the pack can be downloaded.", true);
+    return;
+  }
+  $("downloadPackButton").disabled = true;
+  msg("packMessage", "Preparing the candidate pack from Dropbox...");
+  try {
+    const {data, error} = await supabase.auth.getSession();
+    if (error) throw error;
+    const accessToken = data.session?.access_token;
+    if (!accessToken) throw new Error("Your session has expired. Please sign in again.");
+    const response = await fetch("/.netlify/functions/dropbox-download-candidate-pack", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${accessToken}`
+      },
+      body: JSON.stringify({candidateId: editingId})
+    });
+    if (!response.ok) {
+      let detail = "Candidate pack download failed.";
+      try { const result = await response.json(); detail = result.error || detail; } catch {}
+      throw new Error(detail);
+    }
+    const blob = await response.blob();
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `${(candidate.full_name || "Candidate").replace(/[^a-z0-9 _-]/gi, "").trim() || "Candidate"} - Candidate Pack.zip`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+    msg("packMessage", "Candidate pack downloaded successfully. You can now attach the ZIP file to your email to Head Office.");
+  } catch (error) {
+    msg("packMessage", "Download failed: " + error.message, true);
+  } finally {
+    $("downloadPackButton").disabled = false;
+  }
+}
+
 async function loadCandidateDocuments(candidateId) {
   $("documentList").textContent = "Loading uploaded documents...";
   try {
@@ -505,6 +563,7 @@ async function loadCandidateDocuments(candidateId) {
 
     updateDocumentControls($("mie").value);
     renderDocumentChecklist();
+    updateCandidatePackButton(candidateId);
 
     if (!data || data.length === 0) {
       $("documentList").textContent = "No documents uploaded yet.";
@@ -800,6 +859,8 @@ function openForm(candidate = null) {
   $("notes").value = candidate?.screening_notes || "";
   $("dropboxPath").textContent = candidate?.dropbox_folder_path || (editingId ? "No Dropbox folder recorded for this candidate yet." : "A Dropbox folder will be created automatically when you save this candidate.");
   $("deleteCandidateButton").classList.toggle("hidden", !editingId);
+  $("candidatePackArea").classList.add("hidden");
+  $("packMessage").classList.add("hidden");
   $("documentsPanel").classList.toggle("hidden", !editingId || !candidate?.dropbox_folder_path);
   $("documentFile").value = "";
   $("uploadMessage").classList.add("hidden");
@@ -878,6 +939,7 @@ $("logout").addEventListener("click", async () => {
 $("addButton").addEventListener("click", () => openForm());
 
 $("uploadDocumentButton").addEventListener("click", uploadCandidateDocument);
+$("downloadPackButton").addEventListener("click", downloadCandidatePack);
 $("mie").addEventListener("input", () => updateDocumentControls($("mie").value));
 
 $("cancel").addEventListener("click", () => {
