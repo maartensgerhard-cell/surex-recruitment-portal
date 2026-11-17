@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SureX — Permanent deletion test</title>
+  <style>
+    body{font-family:Arial,sans-serif;background:#f3f6f8;color:#17212b;margin:0;padding:32px 16px}
+    main{max-width:560px;margin:0 auto;background:#fff;padding:28px;border-radius:12px;box-shadow:0 4px 18px #0001}
+    h1{font-size:23px;margin-top:0}
+    p{line-height:1.5}
+    label{display:block;font-weight:600;margin:18px 0 7px}
+    input{box-sizing:border-box;width:100%;padding:12px;border:1px solid #b8c2cc;border-radius:6px;font-size:16px}
+    button{margin-top:20px;padding:13px 18px;border:0;border-radius:6px;background:#075b91;color:#fff;font-weight:700;font-size:15px;cursor:pointer}
+    button:disabled{opacity:.55;cursor:not-allowed}
+    #result{white-space:pre-wrap;margin-top:20px;padding:12px;border-radius:6px;background:#eef3f6;display:none;overflow-wrap:anywhere}
+    .warning{background:#fff3df;padding:12px;border-left:4px solid #d78b19}
+  </style>
+</head>
+<body>
+<main>
+  <h1>SureX — Permanent deletion test</h1>
+  <p class="warning"><strong>Important:</strong> This test permanently deletes only the specially created test candidate named <strong>purge test</strong>, its uploaded document records, and its Dropbox folder. It cannot be used to delete other candidates.</p>
+  <p>Enter the private test password you added in Netlify. It is sent only to the protected test function and is not saved on this page.</p>
+  <label for="token">Private test password</label>
+  <input id="token" type="password" autocomplete="off" spellcheck="false">
+  <label for="confirm">Type DELETE PURGE TEST to confirm</label>
+  <input id="confirm" type="text" autocomplete="off">
+  <button id="run" type="button">Permanently delete test candidate</button>
+  <div id="result" role="status"></div>
+</main>
+<script>
+  const button = document.getElementById('run');
+  const result = document.getElementById('result');
+  button.addEventListener('click', async () => {
+    const token = document.getElementById('token').value;
+    const confirmation = document.getElementById('confirm').value.trim();
+    if (!token) { result.style.display='block'; result.textContent='Please enter the private test password.'; return; }
+    if (confirmation !== 'DELETE PURGE TEST') { result.style.display='block'; result.textContent='Confirmation does not match. Type DELETE PURGE TEST exactly.'; return; }
+    if (!window.confirm('This will permanently delete the purge test candidate and its Dropbox folder. Continue?')) return;
+    button.disabled = true;
+    result.style.display='block';
+    result.textContent='Working… please wait.';
+    try {
+      const response = await fetch('/.netlify/functions/purge-test', {
+        method: 'POST',
+        headers: { 'x-purge-test-token': token }
+      });
+      const body = await response.text();
+      result.textContent = 'HTTP ' + response.status + '\n' + body;
+    } catch (error) {
+      result.textContent = 'Request failed: ' + error.message;
+    } finally {
+      document.getElementById('token').value = '';
+      button.disabled = false;
+    }
+  });
+</script>
+</body>
+</html>
