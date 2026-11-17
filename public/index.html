@@ -177,6 +177,8 @@ th{color:#b8c5d1;font-weight:normal}
           <button id="uploadDocumentButton" type="button">Upload document to Dropbox</button>
         </div>
         <p id="uploadMessage" class="message small hidden" role="status"></p>
+        <h3 class="small">Document checklist</h3>
+        <div id="documentChecklist" class="message small">Open a candidate to view document requirements.</div>
         <h3 class="small">Uploaded documents</h3>
         <div id="documentList" class="message small">Open a candidate to view uploaded documents.</div>
       </div>
@@ -362,6 +364,39 @@ function hasMieScreeningDocument() {
   return currentCandidateDocuments.some(doc => doc.document_type === "MIE Screening");
 }
 
+const REQUIRED_DOCUMENTS = [
+  "MIE Screening",
+  "ID",
+  "Matric",
+  "Driver's Licence",
+  "Tax",
+  "Bank Confirmation",
+  "CV"
+];
+
+function renderDocumentChecklist() {
+  const uploadedTypes = new Set(currentCandidateDocuments.map(doc => doc.document_type));
+  const mieCleared = isMieCleared($("mie").value);
+
+  $("documentChecklist").innerHTML = REQUIRED_DOCUMENTS.map(type => {
+    const uploaded = uploadedTypes.has(type);
+    const waitingForMie = type !== "MIE Screening" && !mieCleared;
+    const status = uploaded ? "Uploaded" : waitingForMie ? "Locked until MIE is Cleared" : "Outstanding";
+    const symbol = uploaded ? "✓" : "○";
+    return `<div style="padding:6px 0;border-bottom:1px solid #536474"><strong>${symbol} ${escapeHTML(type)}</strong> — ${escapeHTML(status)}</div>`;
+  }).join("");
+
+  const allUploaded = REQUIRED_DOCUMENTS.every(type => uploadedTypes.has(type));
+  if (mieCleared && allUploaded) {
+    $("documentChecklist").innerHTML += '<p><strong>All required documents received.</strong> Candidate is ready for submission.</p>';
+  } else if (mieCleared) {
+    const outstanding = REQUIRED_DOCUMENTS.filter(type => !uploadedTypes.has(type));
+    $("documentChecklist").innerHTML += `<p>Outstanding: ${outstanding.map(escapeHTML).join(", ")}</p>`;
+  } else {
+    $("documentChecklist").innerHTML += '<p>Complete MIE screening and record a Cleared result to unlock the remaining requirements.</p>';
+  }
+}
+
 function updateDocumentControls(mieValue) {
   const cleared = isMieCleared(mieValue);
   const mieDocumentUploaded = hasMieScreeningDocument();
@@ -389,6 +424,7 @@ async function loadCandidateDocuments(candidateId) {
 
     currentCandidateDocuments = data || [];
     updateDocumentControls($("mie").value);
+    renderDocumentChecklist();
 
     if (!data || data.length === 0) {
       $("documentList").textContent = "No documents uploaded yet.";
@@ -405,6 +441,7 @@ async function loadCandidateDocuments(candidateId) {
   } catch (error) {
     currentCandidateDocuments = [];
     updateDocumentControls($("mie").value);
+    renderDocumentChecklist();
     $("documentList").textContent = "Could not load document list: " + error.message;
   }
 }
