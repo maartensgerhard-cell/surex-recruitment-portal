@@ -130,6 +130,15 @@ th{color:#b8c5d1;font-weight:normal}
         </select>
       </div>
 
+      <div class="full" id="headOfficePanel">
+        <h2>Head Office tracking</h2>
+        <p class="muted small">Record the Head Office reference and feedback when the candidate is submitted or a decision is received.</p>
+        <label for="headOfficeReference">Head Office reference number</label>
+        <input id="headOfficeReference" maxlength="200" placeholder="Enter reference number if provided">
+        <label for="headOfficeFeedback">Head Office feedback / decline reason</label>
+        <textarea id="headOfficeFeedback" rows="3" maxlength="5000" placeholder="Record approval feedback, outstanding requirements or reason for decline"></textarea>
+        <p id="submissionDetails" class="muted small"></p>
+      </div>
       <div>
         <label for="branch">Branch *</label>
         <select id="branch" required></select>
@@ -286,7 +295,8 @@ async function loadCandidates(successMessage = "") {
       .select(
         "id,full_name,branch_id,recruiter_id,status," +
         "licence_check,credit_check,mie_check,screening_notes," +
-        "deleted_at,created_at,dropbox_folder_path"
+        "deleted_at,created_at,dropbox_folder_path," +
+        "submitted_at,submitted_by,outcome_at,head_office_reference,head_office_feedback"
       )
       .is("deleted_at", null)
       .order("created_at", {ascending: false});
@@ -584,6 +594,23 @@ function escapeHTML(value) {
   })[char]);
 }
 
+function configureStatusOptions(candidate) {
+  const select = $("status");
+  const current = candidate?.status || "New";
+  const allowed = current === "Ready for Submission"
+    ? ["Ready for Submission", "Submitted to Head Office"]
+    : current === "Submitted to Head Office"
+      ? ["Submitted to Head Office", "Approved", "Declined"]
+      : current === "Approved" || current === "Declined"
+        ? [current]
+        : [current];
+
+  [...select.options].forEach(option => {
+    option.disabled = !allowed.includes(option.value);
+  });
+  select.value = current;
+}
+
 function openForm(candidate = null) {
   editingId = candidate ? candidate.id : null;
   $("candidateForm").reset();
@@ -593,8 +620,16 @@ function openForm(candidate = null) {
 
   currentCandidateDocuments = [];
   $("fullName").value = candidate?.full_name || "";
-  $("status").value = VALID_STATUSES.includes(candidate?.status)
-    ? candidate.status : "New";
+  configureStatusOptions(candidate);
+  $("headOfficeReference").value = candidate?.head_office_reference || "";
+  $("headOfficeFeedback").value = candidate?.head_office_feedback || "";
+  const submissionDate = candidate?.submitted_at
+    ? new Date(candidate.submitted_at).toLocaleString()
+    : "Not yet submitted";
+  const outcomeDate = candidate?.outcome_at
+    ? new Date(candidate.outcome_at).toLocaleString()
+    : "No final decision recorded";
+  $("submissionDetails").textContent = `Submission: ${submissionDate} · Outcome: ${outcomeDate}`;
   $("branch").value = candidate?.branch_id || "";
   $("recruiter").value = candidate?.recruiter_id || "";
   $("licence").value = candidate?.licence_check || "Pending";
@@ -726,16 +761,38 @@ $("candidateForm").addEventListener("submit", async event => {
     licence_check: $("licence").value.trim(),
     credit_check: $("credit").value.trim(),
     mie_check: $("mie").value.trim(),
-    screening_notes: $("notes").value.trim() || null
+    screening_notes: $("notes").value.trim() || null,
+    head_office_reference: $("headOfficeReference").value.trim() || null,
+    head_office_feedback: $("headOfficeFeedback").value.trim() || null
   };
 
   const existingCandidate = wasEditing ? candidates.find(item => item.id === editingId) : null;
   const selectedStatus = $("status").value;
-  record.status = wasEditing && MANUAL_STATUSES.includes(selectedStatus)
-    ? selectedStatus
-    : wasEditing
-      ? calculateCandidateStatus(record.mie_check, currentCandidateDocuments)
-      : "New";
+  const previousStatus = existingCandidate?.status || "New";
+
+  if (wasEditing && selectedStatus !== previousStatus) {
+    const allowedTransition =
+      (previousStatus === "Ready for Submission" && selectedStatus === "Submitted to Head Office") ||
+      (previousStatus === "Submitted to Head Office" && ["Approved", "Declined"].includes(selectedStatus));
+    if (!allowedTransition) {
+      msg("formMessage", "This status change is not allowed. Candidates must be submitted from Ready for Submission, then marked Approved or Declined after submission.", true);
+      $("saveButton").disabled = false;
+      return;
+    }
+  }
+
+  if (wasEditing) {
+    record.status = selectedStatus;
+    if (selectedStatus === "Submitted to Head Office" && previousStatus !== selectedStatus) {
+      record.submitted_at = new Date().toISOString();
+      record.submitted_by = user.id;
+    }
+    if (["Approved", "Declined"].includes(selectedStatus) && previousStatus !== selectedStatus) {
+      record.outcome_at = new Date().toISOString();
+    }
+  } else {
+    record.status = "New";
+  }
 
   try {
     let result;
