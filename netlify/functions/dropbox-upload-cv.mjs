@@ -25,6 +25,13 @@ export default async (req) => {
     const tokenRes = await fetch("https://api.dropbox.com/oauth2/token",{method:"POST",headers:{Authorization:"Basic "+basic,"Content-Type":"application/x-www-form-urlencoded"},body:new URLSearchParams({grant_type:"refresh_token",refresh_token:env.DROPBOX_REFRESH_TOKEN})});
     if (!tokenRes.ok) throw new Error("Dropbox authorisation failed.");
     const token = await tokenRes.json();
+    const folderPath = "/SureX Free state/SureX Management/Onboarding/CV Management";
+    const folderRes = await fetch("https://api.dropboxapi.com/2/files/create_folder_v2",{method:"POST",headers:{Authorization:"Bearer "+token.access_token,"Content-Type":"application/json"},body:JSON.stringify({path:folderPath,autorename:false})});
+    if (!folderRes.ok) {
+      const folderError = await folderRes.json();
+      const summary = folderError?.error_summary || "";
+      if (!summary.includes("path/conflict/folder")) throw new Error("Could not create or access the CV Management Dropbox folder.");
+    }
     const up = await fetch("https://content.dropboxapi.com/2/files/upload",{method:"POST",headers:{Authorization:"Bearer "+token.access_token,"Content-Type":"application/octet-stream","Dropbox-API-Arg":JSON.stringify({path,mode:"add",autorename:true,mute:false})},body:await file.arrayBuffer()});
     const data = await up.json();
     if (!up.ok) { console.error("Dropbox CV upload",JSON.stringify(data)); throw new Error("Dropbox upload failed. Check that the CV Management folder exists."); }
