@@ -9,7 +9,7 @@ export default async (req) => {
 
   try {
     const authHeader = req.headers.get("authorization") || "";
-    const accessToken = authHeader.replace(/^Bearer\\s+/i, "");
+    const accessToken = authHeader.replace(/^Bearer\s+/i, "");
     if (!accessToken) {
       return new Response(JSON.stringify({ error: "Sign-in required." }), { status: 401, headers });
     }
@@ -54,7 +54,7 @@ export default async (req) => {
       return new Response(JSON.stringify({ error: "Enter a valid candidate name (maximum 150 characters)." }), { status: 400, headers });
     }
 
-    const safeName = candidateName.replace(/[<>:"|?*]/g, "-").replace(/\\s+/g, " ").trim();
+    const safeName = candidateName.replace(/[<>:"|?*]/g, "-").replace(/\s+/g, " ").trim();
     const folderPath = `/SureX Free state/SureX Management/Onboarding/Candidate folders/${safeName}`;
 
     const basic = Buffer.from(`${appKey}:${appSecret}`).toString("base64");
