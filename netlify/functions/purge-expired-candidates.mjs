@@ -49,7 +49,7 @@ async function deleteDropboxFolder(accessToken, path) {
   const data = await response.json().catch(() => ({}));
   if (response.ok) return;
 
-  // A folder that has already been removed is treated as successfully cleaned up.
+  // A folder already removed during an earlier attempt is safe to retry.
   const errorTag = data?.error?.[".tag"];
   const pathTag = data?.error?.path?.[".tag"];
   const summary = String(data?.error_summary || "").toLowerCase();
@@ -80,8 +80,20 @@ async function supabaseRequest(url, serviceKey, options = {}) {
   }
 
   if (response.status === 204) return null;
-  const text = await response.text();
-  return text ? JSON.parse(text) : null;
+  const responseText = await response.text();
+  return responseText ? JSON.parse(responseText) : null;
+}
+
+async function callDatabaseFunction(supabaseUrl, serviceKey, functionName, candidateId) {
+  return supabaseRequest(
+    `${supabaseUrl}/rest/v1/rpc/${functionName}`,
+    serviceKey,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ p_candidate_id: candidateId })
+    }
+  );
 }
 
 export const config = {
@@ -96,12 +108,17 @@ export default async () => {
 
   if (!supabaseUrl || !serviceKey) {
     console.error("Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY.");
-    return json(500, { error: "Required Supabase server environment variables are missing." });
+    return json(500, {
+      error: "Required Supabase server environment variables are missing."
+    });
   }
 
   const now = new Date().toISOString();
   const candidateUrl = new URL(`${supabaseUrl}/rest/v1/candidates`);
-  candidateUrl.searchParams.set("select", "id,full_name,dropbox_folder_path,deleted_at,permanent_delete_at");
+  candidateUrl.searchParams.set(
+    "select",
+    "id,full_name,dropbox_folder_path,deleted_at,permanent_delete_at"
+  );
   candidateUrl.searchParams.set("deleted_at", "not.is.null");
   candidateUrl.searchParams.set("permanent_delete_at", `lte.${now}`);
   candidateUrl.searchParams.set("order", "permanent_delete_at.asc");
@@ -112,7 +129,9 @@ export default async () => {
     const candidates = Array.isArray(expired) ? expired : [];
 
     if (!enabled) {
-      console.log(`DRY RUN: ${candidates.length} candidate(s) are eligible for permanent deletion. No records or Dropbox folders were changed.`);
+      console.log(
+        `DRY RUN: ${candidates.length} candidate(s) are eligible for permanent deletion. No records or Dropbox folders were changed.`
+      );
       return json(200, {
         mode: "dry_run",
         checkedAt: now,
@@ -123,67 +142,87 @@ export default async () => {
 
     if (candidates.length === 0) {
       console.log("No candidates have reached their permanent deletion date.");
-      return json(200, { mode: "active", deletedCount: 0, failedCount: 0 });
+      return json(200, {
+        mode: "active",
+        deletedCount: 0,
+        failedCount: 0
+      });
     }
 
     const dropboxToken = await getDropboxAccessToken();
     const results = [];
 
     for (const candidate of candidates) {
+      let claimed = false;
+
       try {
-        if (!candidate.dropbox_folder_path) {
-          throw new Error("Candidate has no saved Dropbox folder path; skipped to avoid leaving files behind.");
+        // Atomically claim the candidate. This prevents a simultaneous restore
+        // or a second scheduled invocation from processing the same record.
+        const claim = await callDatabaseFunction(
+          supabaseUrl,
+          serviceKey,
+          "claim_expired_candidate",
+          candidate.id
+        );
+
+        if (!claim) {
+          results.push({
+            candidateId: candidate.id,
+            status: "skipped",
+            reason: "Candidate was no longer eligible or is already being processed."
+          });
+          continue;
         }
 
-        // Remove the Dropbox folder first. If Dropbox is unavailable, keep the
-        // Supabase records so the next scheduled run can safely retry.
+        claimed = true;
+
+        if (!candidate.dropbox_folder_path) {
+          throw new Error(
+            "Candidate has no saved Dropbox folder path; skipped to avoid leaving files behind."
+          );
+        }
+
+        // Dropbox is removed first. If this or the database transaction fails,
+        // the database record remains and the next run can retry safely.
         await deleteDropboxFolder(dropboxToken, candidate.dropbox_folder_path);
 
-        const documentsUrl = new URL(`${supabaseUrl}/rest/v1/candidate_documents`);
-        documentsUrl.searchParams.set("candidate_id", `eq.${candidate.id}`);
-        await supabaseRequest(documentsUrl, serviceKey, { method: "DELETE" });
+        const finalized = await callDatabaseFunction(
+          supabaseUrl,
+          serviceKey,
+          "finalize_expired_candidate",
+          candidate.id
+        );
 
-        const deleteCandidateUrl = new URL(`${supabaseUrl}/rest/v1/candidates`);
-        deleteCandidateUrl.searchParams.set("id", `eq.${candidate.id}`);
-        deleteCandidateUrl.searchParams.set("deleted_at", "not.is.null");
-        deleteCandidateUrl.searchParams.set("permanent_delete_at", `lte.${now}`);
-
-        const deletedRows = await supabaseRequest(deleteCandidateUrl, serviceKey, {
-          method: "DELETE",
-          headers: { Prefer: "return=representation" }
-        });
-
-        if (!Array.isArray(deletedRows) || deletedRows.length !== 1) {
-          throw new Error("Candidate record was not deleted; it may have been restored or changed during cleanup.");
+        if (finalized !== true) {
+          throw new Error(
+            "Database finalisation did not confirm deletion. The candidate record was retained."
+          );
         }
 
-        // Preserve the audit trail. candidate_id is deliberately null because
-        // the candidate has now been permanently removed.
-        const auditUrl = `${supabaseUrl}/rest/v1/activity_logs`;
-        await supabaseRequest(auditUrl, serviceKey, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Prefer: "return=minimal"
-          },
-          body: JSON.stringify({
-            candidate_id: null,
-            actor_id: null,
-            action: "candidate_permanently_deleted",
-            details: {
-              candidate_id: candidate.id,
-              candidate_name: candidate.full_name,
-              dropbox_folder_path: candidate.dropbox_folder_path,
-              permanent_delete_at: candidate.permanent_delete_at,
-              deleted_by: "automatic_system_cleanup"
-            }
-          })
-        });
-
+        claimed = false;
         results.push({ candidateId: candidate.id, status: "deleted" });
         console.log(`Permanently deleted expired candidate: ${candidate.id}`);
       } catch (error) {
         console.error(`Cleanup failed for candidate ${candidate.id}:`, error);
+
+        // Release the lock so a later scheduled run can retry. If Dropbox was
+        // already deleted, its not-found response is treated as success above.
+        if (claimed) {
+          try {
+            await callDatabaseFunction(
+              supabaseUrl,
+              serviceKey,
+              "release_expired_candidate",
+              candidate.id
+            );
+          } catch (releaseError) {
+            console.error(
+              `Could not release cleanup lock for candidate ${candidate.id}:`,
+              releaseError
+            );
+          }
+        }
+
         results.push({
           candidateId: candidate.id,
           status: "failed",
@@ -193,7 +232,7 @@ export default async () => {
     }
 
     const deletedCount = results.filter(item => item.status === "deleted").length;
-    const failedCount = results.length - deletedCount;
+    const failedCount = results.filter(item => item.status === "failed").length;
 
     return json(200, {
       mode: "active",
@@ -204,6 +243,8 @@ export default async () => {
     });
   } catch (error) {
     console.error("Expired candidate cleanup failed:", error);
-    return json(500, { error: error.message || "Cleanup failed." });
+    return json(500, {
+      error: error.message || "Cleanup failed."
+    });
   }
 };
