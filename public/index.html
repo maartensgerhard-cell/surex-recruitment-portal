@@ -154,6 +154,28 @@ th{color:#b8c5d1;font-weight:normal}
         <label>Dropbox candidate folder</label>
         <p id="dropboxPath" class="message small">A folder will be created automatically when you save a new candidate.</p>
       </div>
+      <div id="documentsPanel" class="full hidden">
+        <h2>Candidate documents</h2>
+        <p class="muted small">Upload MIE screening first. The other document types become available once the MIE check is recorded as Cleared, Clear or Passed. Maximum file size: 20 MB.</p>
+        <label for="documentType">Document type</label>
+        <select id="documentType">
+          <option value="MIE Screening">MIE Screening</option>
+          <option value="ID">ID</option>
+          <option value="Matric">Matric</option>
+          <option value="Driver's Licence">Driver's Licence</option>
+          <option value="Tax">Tax</option>
+          <option value="Bank Confirmation">Bank Confirmation</option>
+          <option value="CV">CV</option>
+        </select>
+        <label for="documentFile">Choose document</label>
+        <input id="documentFile" type="file">
+        <div class="row">
+          <button id="uploadDocumentButton" type="button">Upload document to Dropbox</button>
+        </div>
+        <p id="uploadMessage" class="message small hidden" role="status"></p>
+        <h3 class="small">Uploaded documents</h3>
+        <div id="documentList" class="message small">Open a candidate to view uploaded documents.</div>
+      </div>
       <div class="full">
         <label for="notes">Screening notes</label>
         <textarea id="notes" rows="4" maxlength="5000"></textarea>
@@ -327,6 +349,100 @@ async function createDropboxFolder(candidateName) {
   return result.folderPath;
 }
 
+function isMieCleared(value) {
+  return ["cleared", "clear", "passed"].includes(String(value || "").trim().toLowerCase());
+}
+
+function updateDocumentControls(mieValue) {
+  const cleared = isMieCleared(mieValue);
+  const select = $("documentType");
+  [...select.options].forEach(option => {
+    option.disabled = option.value !== "MIE Screening" && !cleared;
+  });
+  if (!cleared) select.value = "MIE Screening";
+}
+
+async function loadCandidateDocuments(candidateId) {
+  $("documentList").textContent = "Loading uploaded documents...";
+  try {
+    const {data, error} = await supabase
+      .from("candidate_documents")
+      .select("id,document_type,original_filename,dropbox_path,uploaded_at")
+      .eq("candidate_id", candidateId)
+      .order("uploaded_at", {ascending: false});
+    if (error) throw error;
+
+    if (!data || data.length === 0) {
+      $("documentList").textContent = "No documents uploaded yet.";
+      return;
+    }
+
+    $("documentList").innerHTML = data.map(doc =>
+      `<div style="padding:7px 0;border-bottom:1px solid #536474">
+        <strong>${escapeHTML(doc.document_type)}</strong> — ${escapeHTML(doc.original_filename || "File")}
+        <div class="muted">${escapeHTML(doc.uploaded_at ? new Date(doc.uploaded_at).toLocaleString() : "")}</div>
+        <div class="muted">${escapeHTML(doc.dropbox_path || "")}</div>
+      </div>`
+    ).join("");
+  } catch (error) {
+    $("documentList").textContent = "Could not load document list: " + error.message;
+  }
+}
+
+async function uploadCandidateDocument() {
+  if (!editingId || !user) {
+    msg("uploadMessage", "Save the candidate before uploading documents.", true);
+    return;
+  }
+
+  const file = $("documentFile").files[0];
+  if (!file) {
+    msg("uploadMessage", "Please choose a document first.", true);
+    return;
+  }
+  if (file.size > 20 * 1024 * 1024) {
+    msg("uploadMessage", "The file is larger than 20 MB. Please choose a smaller file.", true);
+    return;
+  }
+
+  const documentType = $("documentType").value;
+  if (documentType !== "MIE Screening" && !isMieCleared($("mie").value)) {
+    msg("uploadMessage", "Complete and record a cleared MIE result before uploading the other documents.", true);
+    return;
+  }
+
+  $("uploadDocumentButton").disabled = true;
+  msg("uploadMessage", "Uploading document to the candidate's Dropbox folder...");
+
+  try {
+    const {data, error} = await supabase.auth.getSession();
+    if (error) throw error;
+    const accessToken = data.session?.access_token;
+    if (!accessToken) throw new Error("Your session has expired. Please sign in again.");
+
+    const formData = new FormData();
+    formData.append("candidateId", editingId);
+    formData.append("documentType", documentType);
+    formData.append("file", file);
+
+    const response = await fetch("/.netlify/functions/dropbox-upload-document", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${accessToken}` },
+      body: formData
+    });
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.error || "Document upload failed.");
+
+    $("documentFile").value = "";
+    msg("uploadMessage", "SUCCESS: " + result.message + "\\nSaved in Dropbox: " + result.dropboxPath);
+    await loadCandidateDocuments(editingId);
+  } catch (error) {
+    msg("uploadMessage", "Upload failed: " + error.message, true);
+  } finally {
+    $("uploadDocumentButton").disabled = false;
+  }
+}
+
 function renderCandidates() {
   const branchNames = new Map(branches.map(x => [x.id, x.name]));
   const recruiterNames = new Map(recruiters.map(x => [x.id, x.name]));
@@ -387,6 +503,11 @@ function openForm(candidate = null) {
   $("mie").value = candidate?.mie_check || "Pending";
   $("notes").value = candidate?.screening_notes || "";
   $("dropboxPath").textContent = candidate?.dropbox_folder_path || (editingId ? "No Dropbox folder recorded for this candidate yet." : "A Dropbox folder will be created automatically when you save this candidate.");
+  $("documentsPanel").classList.toggle("hidden", !editingId || !candidate?.dropbox_folder_path);
+  $("documentFile").value = "";
+  $("uploadMessage").classList.add("hidden");
+  updateDocumentControls(candidate?.mie_check || $("mie").value);
+  if (editingId && candidate?.dropbox_folder_path) loadCandidateDocuments(candidate.id);
 
   $("formMessage").classList.add("hidden");
   $("formPanel").classList.remove("hidden");
@@ -458,6 +579,9 @@ $("logout").addEventListener("click", async () => {
 });
 
 $("addButton").addEventListener("click", () => openForm());
+
+$("uploadDocumentButton").addEventListener("click", uploadCandidateDocument);
+$("mie").addEventListener("input", () => updateDocumentControls($("mie").value));
 
 $("cancel").addEventListener("click", () => {
   editingId = null;
