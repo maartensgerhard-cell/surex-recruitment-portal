@@ -9,7 +9,7 @@ export default async (req) => {
 
   try {
     const authHeader = req.headers.get("authorization") || "";
-    const accessToken = authHeader.replace(/^Bearer\\s+/i, "");
+    const accessToken = authHeader.replace(/^Bearer\s+/i, "").trim();
     if (!accessToken) {
       return new Response(JSON.stringify({ error: "Sign-in required." }), { status: 401, headers });
     }
@@ -92,7 +92,7 @@ export default async (req) => {
     }
 
     const originalName = String(file.name).split(/[\\/]/).pop().replace(/[<>:"|?*\\x00-\\x1F]/g, "_").trim().slice(0, 180) || "document";
-    const safeType = documentType.replace(/[^a-zA-Z0-9 -]/g, "").replace(/\\s+/g, "_");
+    const safeType = documentType.replace(/[^a-zA-Z0-9 -]/g, "").replace(/\s+/g, "_");
     const dropboxPath = `${candidate.dropbox_folder_path}/${safeType} - ${originalName}`;
 
     const basic = Buffer.from(`${appKey}:${appSecret}`).toString("base64");
