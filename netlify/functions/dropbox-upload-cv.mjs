@@ -2,7 +2,7 @@ export default async (req) => {
   const headers = {"Content-Type":"application/json"};
   if (req.method !== "POST") return new Response(JSON.stringify({error:"Method not allowed"}),{status:405,headers});
   try {
-    const access = (req.headers.get("authorization") || "").replace(/^Bearer\\s+/i,"").trim();
+    const access = (req.headers.get("authorization") || "").replace(/^Bearer\s+/i,"").trim();
     if (!access) return new Response(JSON.stringify({error:"Sign-in required."}),{status:401,headers});
     const env = process.env;
     const required = [env.SUPABASE_URL,env.SUPABASE_ANON_KEY,env.DROPBOX_APP_KEY,env.DROPBOX_APP_SECRET,env.DROPBOX_REFRESH_TOKEN];
