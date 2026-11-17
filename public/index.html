@@ -148,7 +148,11 @@ th{color:#b8c5d1;font-weight:normal}
       </div>
       <div>
         <label for="mie">MIE check *</label>
-        <input id="mie" required value="Pending" maxlength="100">
+        <select id="mie" required>
+          <option value="Pending">Pending</option>
+          <option value="Cleared">Cleared</option>
+          <option value="Failed">Failed</option>
+        </select>
       </div>
       <div class="full">
         <label>Dropbox candidate folder</label>
@@ -156,7 +160,7 @@ th{color:#b8c5d1;font-weight:normal}
       </div>
       <div id="documentsPanel" class="full hidden">
         <h2>Candidate documents</h2>
-        <p class="muted small">Upload MIE screening first. The other document types become available once the MIE check is recorded as Cleared, Clear or Passed. Maximum file size: 20 MB.</p>
+        <p class="muted small">Upload the MIE Screening document first. The other document types unlock only after the MIE outcome is Cleared and the MIE Screening document is uploaded. Pending and Failed candidates cannot upload the remaining documents. Maximum file size: 20 MB.</p>
         <label for="documentType">Document type</label>
         <select id="documentType">
           <option value="MIE Screening">MIE Screening</option>
@@ -206,6 +210,7 @@ let branches = [];
 let recruiters = [];
 let candidates = [];
 let editingId = null;
+let currentCandidateDocuments = [];
 
 const VALID_STATUSES = [
   "New",
@@ -350,16 +355,26 @@ async function createDropboxFolder(candidateName) {
 }
 
 function isMieCleared(value) {
-  return ["cleared", "clear", "passed"].includes(String(value || "").trim().toLowerCase());
+  return String(value || "").trim().toLowerCase() === "cleared";
+}
+
+function hasMieScreeningDocument() {
+  return currentCandidateDocuments.some(doc => doc.document_type === "MIE Screening");
 }
 
 function updateDocumentControls(mieValue) {
   const cleared = isMieCleared(mieValue);
+  const mieDocumentUploaded = hasMieScreeningDocument();
+  const canUploadOtherDocuments = cleared && mieDocumentUploaded;
   const select = $("documentType");
+
   [...select.options].forEach(option => {
-    option.disabled = option.value !== "MIE Screening" && !cleared;
+    option.disabled = option.value !== "MIE Screening" && !canUploadOtherDocuments;
   });
-  if (!cleared) select.value = "MIE Screening";
+
+  if (!canUploadOtherDocuments && select.value !== "MIE Screening") {
+    select.value = "MIE Screening";
+  }
 }
 
 async function loadCandidateDocuments(candidateId) {
@@ -371,6 +386,9 @@ async function loadCandidateDocuments(candidateId) {
       .eq("candidate_id", candidateId)
       .order("uploaded_at", {ascending: false});
     if (error) throw error;
+
+    currentCandidateDocuments = data || [];
+    updateDocumentControls($("mie").value);
 
     if (!data || data.length === 0) {
       $("documentList").textContent = "No documents uploaded yet.";
@@ -385,6 +403,8 @@ async function loadCandidateDocuments(candidateId) {
       </div>`
     ).join("");
   } catch (error) {
+    currentCandidateDocuments = [];
+    updateDocumentControls($("mie").value);
     $("documentList").textContent = "Could not load document list: " + error.message;
   }
 }
@@ -406,9 +426,15 @@ async function uploadCandidateDocument() {
   }
 
   const documentType = $("documentType").value;
-  if (documentType !== "MIE Screening" && !isMieCleared($("mie").value)) {
-    msg("uploadMessage", "Complete and record a cleared MIE result before uploading the other documents.", true);
-    return;
+  if (documentType !== "MIE Screening") {
+    if (!isMieCleared($("mie").value)) {
+      msg("uploadMessage", "The MIE outcome must be Cleared before uploading the remaining documents.", true);
+      return;
+    }
+    if (!hasMieScreeningDocument()) {
+      msg("uploadMessage", "Upload the MIE Screening document before uploading the remaining documents.", true);
+      return;
+    }
   }
 
   $("uploadDocumentButton").disabled = true;
@@ -493,6 +519,7 @@ function openForm(candidate = null) {
   $("formTitle").textContent = editingId ? "Edit candidate" : "Add candidate";
   $("saveButton").textContent = editingId ? "Save changes" : "Save candidate";
 
+  currentCandidateDocuments = [];
   $("fullName").value = candidate?.full_name || "";
   $("status").value = VALID_STATUSES.includes(candidate?.status)
     ? candidate.status : "New";
@@ -500,7 +527,12 @@ function openForm(candidate = null) {
   $("recruiter").value = candidate?.recruiter_id || "";
   $("licence").value = candidate?.licence_check || "Pending";
   $("credit").value = candidate?.credit_check || "Pending";
-  $("mie").value = candidate?.mie_check || "Pending";
+  const savedMie = String(candidate?.mie_check || "Pending").trim().toLowerCase();
+  $("mie").value = savedMie === "cleared" || savedMie === "clear" || savedMie === "passed"
+    ? "Cleared"
+    : savedMie === "failed"
+      ? "Failed"
+      : "Pending";
   $("notes").value = candidate?.screening_notes || "";
   $("dropboxPath").textContent = candidate?.dropbox_folder_path || (editingId ? "No Dropbox folder recorded for this candidate yet." : "A Dropbox folder will be created automatically when you save this candidate.");
   $("documentsPanel").classList.toggle("hidden", !editingId || !candidate?.dropbox_folder_path);
