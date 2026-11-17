@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SureX Dropbox Folder Test</title>
+<style>
+body{margin:0;background:#101820;color:#fff;font-family:Arial,sans-serif;padding:30px}
+main{max-width:560px;margin:40px auto;background:#1d2935;border:1px solid #354555;border-radius:12px;padding:24px}
+label{display:block;margin:16px 0 7px;color:#b8c5d1}
+input{width:100%;box-sizing:border-box;padding:12px;border:1px solid #536474;border-radius:7px;background:#101820;color:#fff}
+button{padding:12px 16px;border:0;border-radius:7px;background:#00b8d9;color:#07141c;font-weight:bold;cursor:pointer;margin-top:14px}
+button:disabled{opacity:.6}
+.message{margin-top:18px;padding:12px;background:#243744;border-radius:7px;white-space:pre-wrap;overflow-wrap:anywhere}
+a{color:#00b8d9}
+</style>
+</head>
+<body>
+<main>
+<h1>Dropbox folder test</h1>
+<p>This creates a test candidate folder inside your existing Candidate folders directory.</p>
+<label for="candidateName">Test candidate folder name</label>
+<input id="candidateName" maxlength="150" value="Dropbox Test Candidate">
+<button id="testButton" type="button">Create test folder</button>
+<div id="message" class="message">Ready to test.</div>
+<p><a href="/">Return to recruitment portal</a></p>
+</main>
+<script type="module">
+import {createClient} from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
+const supabase = createClient(
+  "https://mlovrosbgesesidlqbth.supabase.co",
+  "sb_publishable_9as4DXTfGM-axP-EdQVbGQ_B-zdUuxg"
+);
+const button = document.getElementById("testButton");
+const message = document.getElementById("message");
+button.addEventListener("click", async () => {
+  button.disabled = true;
+  message.textContent = "Checking your portal session...";
+  try {
+    const {data, error} = await supabase.auth.getSession();
+    if (error) throw error;
+    const token = data.session?.access_token;
+    if (!token) throw new Error("No active portal session. Sign in to the portal first, in this same browser.");
+    const candidateName = document.getElementById("candidateName").value.trim();
+    message.textContent = "Asking Dropbox to create the folder...";
+    const response = await fetch("/.netlify/functions/dropbox-create-folder", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: "Bearer " + token },
+      body: JSON.stringify({candidateName})
+    });
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.error || "Folder creation request failed.");
+    message.textContent = (result.created ? "SUCCESS: " : "ALREADY EXISTS: ") + result.message + "\\n\\nDropbox path: " + result.folderPath;
+  } catch (error) {
+    message.textContent = "NOT CREATED: " + error.message;
+  } finally {
+    button.disabled = false;
+  }
+});
+</script>
+</body>
+</html>
