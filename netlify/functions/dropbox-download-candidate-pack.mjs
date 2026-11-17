@@ -10,7 +10,7 @@ export default async (req) => {
 
   try {
     const authHeader = req.headers.get("authorization") || "";
-    const accessToken = authHeader.replace(/^Bearer\\s+/i, "").trim();
+    const accessToken = authHeader.replace(/^Bearer\s+/i, "").trim();
     if (!accessToken) {
       return new Response(JSON.stringify({ error: "Sign-in required." }), { status: 401, headers: jsonHeaders });
     }
