@@ -107,6 +107,23 @@ th{color:#b8c5d1;font-weight:normal}
     <p id="count" class="muted small"></p>
   </section>
 
+  <section class="panel">
+    <div class="row" style="justify-content:space-between">
+      <div>
+        <h2>Deleted Candidates</h2>
+        <p class="muted small">Candidates remain recoverable for 30 days after deletion.</p>
+      </div>
+      <button id="refreshDeleted" class="secondary" type="button">Refresh deleted</button>
+    </div>
+    <p id="deletedMessage" class="message" role="status">Loading deleted candidates...</p>
+    <div class="tablewrap">
+      <table style="min-width:700px">
+        <thead><tr><th>Name</th><th>Deleted on</th><th>Permanent deletion date</th><th>Action</th></tr></thead>
+        <tbody id="deletedRows"></tbody>
+      </table>
+    </div>
+  </section>
+
   <section id="formPanel" class="panel hidden">
     <h2 id="formTitle">Add candidate</h2>
     <p class="muted small">Complete all required fields.</p>
@@ -198,6 +215,7 @@ th{color:#b8c5d1;font-weight:normal}
       <div class="full row">
         <button id="saveButton" type="submit">Save candidate</button>
         <button id="cancel" type="button" class="secondary">Cancel</button>
+        <button id="deleteCandidateButton" type="button" class="secondary hidden">Delete candidate</button>
       </div>
     </form>
     <p id="formMessage" class="message hidden" role="status"></p>
@@ -222,6 +240,7 @@ let recruiters = [];
 let candidates = [];
 let editingId = null;
 let currentCandidateDocuments = [];
+let deletedCandidates = [];
 
 const VALID_STATUSES = [
   "New",
@@ -301,7 +320,7 @@ async function loadCandidates(successMessage = "") {
       .select(
         "id,full_name,branch_id,recruiter_id,status," +
         "licence_check,credit_check,mie_check,screening_notes," +
-        "deleted_at,created_at,dropbox_folder_path," +
+        "deleted_at,permanent_delete_at,created_at,dropbox_folder_path," +
         "submitted_at,submitted_by,outcome_at,head_office_reference,head_office_feedback"
       )
       .is("deleted_at", null)
@@ -334,6 +353,7 @@ async function loadCandidates(successMessage = "") {
       ? previousStatus : "";
 
     renderCandidates();
+    await loadDeletedCandidates();
     msg("listMessage", successMessage || "Candidate data loaded successfully.");
   } catch (error) {
     candidates = [];
@@ -589,6 +609,105 @@ async function uploadCandidateDocument() {
   }
 }
 
+async function loadDeletedCandidates() {
+  msg("deletedMessage", "Loading deleted candidates...");
+  const {data, error} = await supabase
+    .from("candidates")
+    .select("id,full_name,deleted_at,permanent_delete_at")
+    .not("deleted_at", "is", null)
+    .order("deleted_at", {ascending: false});
+
+  if (error) {
+    deletedCandidates = [];
+    $("deletedRows").innerHTML = "";
+    msg("deletedMessage", "Could not load deleted candidates: " + error.message, true);
+    return;
+  }
+
+  deletedCandidates = data || [];
+  renderDeletedCandidates();
+}
+
+function renderDeletedCandidates() {
+  $("deletedRows").innerHTML = deletedCandidates.map(candidate => {
+    const deleted = candidate.deleted_at ? new Date(candidate.deleted_at).toLocaleString() : "Unknown";
+    const expiry = candidate.permanent_delete_at ? new Date(candidate.permanent_delete_at).toLocaleString() : "Not set";
+    return `<tr>
+      <td>${escapeHTML(candidate.full_name)}</td>
+      <td>${escapeHTML(deleted)}</td>
+      <td>${escapeHTML(expiry)}</td>
+      <td><button type="button" data-restore="${escapeHTML(candidate.id)}">Restore</button></td>
+    </tr>`;
+  }).join("");
+
+  msg("deletedMessage", deletedCandidates.length
+    ? `${deletedCandidates.length} deleted candidate(s) in the recovery period.`
+    : "There are no deleted candidates.");
+}
+
+async function writeActivityLog(candidateId, action, details) {
+  const {error} = await supabase.from("activity_logs").insert({
+    candidate_id: candidateId,
+    actor_id: user.id,
+    action,
+    details
+  });
+  if (error) throw error;
+}
+
+async function deleteCandidate(candidateId) {
+  const candidate = candidates.find(item => item.id === candidateId);
+  if (!candidate) throw new Error("Candidate could not be found. Refresh the list and try again.");
+
+  const confirmed = confirm(
+    `Move ${candidate.full_name} to Deleted Candidates? Their documents and Dropbox folder will be kept for 30 days.`
+  );
+  if (!confirmed) return;
+
+  const deletedAt = new Date();
+  const permanentDeleteAt = new Date(deletedAt.getTime() + 30 * 24 * 60 * 60 * 1000);
+
+  const {error} = await supabase.from("candidates").update({
+    deleted_at: deletedAt.toISOString(),
+    permanent_delete_at: permanentDeleteAt.toISOString(),
+    updated_at: deletedAt.toISOString()
+  }).eq("id", candidateId);
+
+  if (error) throw error;
+
+  await writeActivityLog(candidateId, "candidate_deleted", {
+    candidate_name: candidate.full_name,
+    deleted_at: deletedAt.toISOString(),
+    permanent_delete_at: permanentDeleteAt.toISOString()
+  });
+
+  editingId = null;
+  $("formPanel").classList.add("hidden");
+  await loadCandidates("Candidate moved to Deleted Candidates. Documents and Dropbox folder have been retained.");
+}
+
+async function restoreCandidate(candidateId) {
+  const candidate = deletedCandidates.find(item => item.id === candidateId);
+  if (!candidate) throw new Error("Deleted candidate could not be found. Refresh and try again.");
+
+  if (!confirm(`Restore ${candidate.full_name} to the active candidate list?`)) return;
+
+  const {error} = await supabase.from("candidates").update({
+    deleted_at: null,
+    permanent_delete_at: null,
+    updated_at: new Date().toISOString()
+  }).eq("id", candidateId);
+
+  if (error) throw error;
+
+  await writeActivityLog(candidateId, "candidate_restored", {
+    candidate_name: candidate.full_name,
+    restored_at: new Date().toISOString()
+  });
+
+  await loadCandidates("Candidate restored successfully. Their documents and Dropbox folder are still attached.");
+}
+
 function renderCandidates() {
   const branchNames = new Map(branches.map(x => [x.id, x.name]));
   const recruiterNames = new Map(recruiters.map(x => [x.id, x.name]));
@@ -680,6 +799,7 @@ function openForm(candidate = null) {
       : "Pending";
   $("notes").value = candidate?.screening_notes || "";
   $("dropboxPath").textContent = candidate?.dropbox_folder_path || (editingId ? "No Dropbox folder recorded for this candidate yet." : "A Dropbox folder will be created automatically when you save this candidate.");
+  $("deleteCandidateButton").classList.toggle("hidden", !editingId);
   $("documentsPanel").classList.toggle("hidden", !editingId || !candidate?.dropbox_folder_path);
   $("documentFile").value = "";
   $("uploadMessage").classList.add("hidden");
@@ -766,6 +886,32 @@ $("cancel").addEventListener("click", () => {
 });
 
 $("refresh").addEventListener("click", () => loadCandidates());
+$("refreshDeleted").addEventListener("click", () => loadDeletedCandidates());
+
+$("deleteCandidateButton").addEventListener("click", async () => {
+  if (!editingId) return;
+  $("deleteCandidateButton").disabled = true;
+  try {
+    await deleteCandidate(editingId);
+  } catch (error) {
+    alert("Could not delete candidate: " + error.message);
+  } finally {
+    $("deleteCandidateButton").disabled = false;
+  }
+});
+
+$("deletedRows").addEventListener("click", async event => {
+  const button = event.target.closest("button[data-restore]");
+  if (!button) return;
+  button.disabled = true;
+  try {
+    await restoreCandidate(button.dataset.restore);
+  } catch (error) {
+    alert("Could not restore candidate: " + error.message);
+  } finally {
+    button.disabled = false;
+  }
+});
 
 ["search", "branchFilter", "recruiterFilter", "statusFilter"].forEach(id => {
   $(id).addEventListener(id === "search" ? "input" : "change", renderCandidates);
