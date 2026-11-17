@@ -56,6 +56,7 @@ th{color:#b8c5d1;font-weight:normal}
     <input id="password" type="password" required autocomplete="current-password">
     <button id="loginButton" type="submit">Sign in</button>
   </form>
+  <p style="margin-top:12px"><a href="#" id="forgotPasswordLink">Forgot password?</a></p>
   <p id="loginMessage" class="message" role="status">Connecting...</p>
 </section>
 
@@ -898,6 +899,31 @@ async function openPortal() {
     msg("loginMessage", "Portal access error: " + error.message, true);
   }
 }
+
+$("forgotPasswordLink").addEventListener("click", async event => {
+  event.preventDefault();
+  const email = $("email").value.trim();
+  if (!email) {
+    msg("loginMessage", "Enter your email address above, then click Forgot password?", true);
+    $("email").focus();
+    return;
+  }
+
+  const link = $("forgotPasswordLink");
+  link.style.pointerEvents = "none";
+  msg("loginMessage", "Sending password reset email...");
+  try {
+    const {error} = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: "https://surex-recruitment-portal.netlify.app/reset-password.html"
+    });
+    if (error) throw error;
+    msg("loginMessage", "If an account exists for that email, a password reset link has been sent. Check your inbox and junk folder.");
+  } catch (error) {
+    msg("loginMessage", "Could not send reset email: " + error.message, true);
+  } finally {
+    link.style.pointerEvents = "";
+  }
+});
 
 $("loginForm").addEventListener("submit", async event => {
   event.preventDefault();
