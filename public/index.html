@@ -241,6 +241,7 @@ function msg(id, text, isError = false) {
 
 function fillSelect(id, items, firstLabel) {
   const select = $(id);
+  const previousValue = select.value;
   select.replaceChildren();
 
   const first = document.createElement("option");
@@ -254,6 +255,11 @@ function fillSelect(id, items, firstLabel) {
     option.textContent = item.name;
     select.appendChild(option);
   });
+
+  // Keep the user's current selection when reference lists are refreshed.
+  if (previousValue && items.some(item => item.id === previousValue)) {
+    select.value = previousValue;
+  }
 }
 
 async function verifyRole() {
@@ -853,8 +859,11 @@ $("candidateForm").addEventListener("submit", async event => {
   }
 });
 
-supabase.auth.onAuthStateChange(() => {
-  setTimeout(() => openPortal(), 0);
+supabase.auth.onAuthStateChange((event) => {
+  // A background token refresh must not reload the portal or reset an open form.
+  if (event === "SIGNED_IN" || event === "SIGNED_OUT") {
+    setTimeout(() => openPortal(), 0);
+  }
 });
 
 openPortal().catch(error => {
