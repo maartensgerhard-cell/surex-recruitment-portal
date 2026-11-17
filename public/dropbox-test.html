@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SureX Dropbox Connection Test</title>
+<style>
+body{font-family:Arial,sans-serif;background:#101820;color:#fff;max-width:720px;margin:50px auto;padding:20px}
+.panel{background:#1d2935;border:1px solid #354555;border-radius:12px;padding:22px}
+button{background:#00b8d9;color:#07141c;border:0;border-radius:7px;padding:12px 16px;font-weight:bold;cursor:pointer}
+#result{white-space:pre-wrap;background:#101820;padding:14px;border-radius:7px;margin-top:16px;overflow-wrap:anywhere}
+</style>
+</head>
+<body>
+<section class="panel">
+<h1>SureX Dropbox Connection Test</h1>
+<p>This page checks the secure Dropbox connection using your existing portal login.</p>
+<button id="test">Test Dropbox connection</button>
+<div id="result" role="status">Waiting for test.</div>
+<p><a href="/" style="color:#00b8d9">Return to recruitment portal</a></p>
+</section>
+<script type="module">
+import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
+const supabase = createClient(
+  "https://mlovrosbgesesidlqbth.supabase.co",
+  "sb_publishable_9as4DXTfGM-axP-EdQVbGQ_B-zdUuxg"
+);
+const button = document.getElementById("test");
+const result = document.getElementById("result");
+button.addEventListener("click", async () => {
+  button.disabled = true;
+  result.textContent = "Checking your portal login and contacting Dropbox...";
+  try {
+    const { data, error } = await supabase.auth.getSession();
+    if (error) throw error;
+    const token = data.session?.access_token;
+    if (!token) throw new Error("No active portal session found. Please sign in to the recruitment portal first, then reopen this page.");
+    const response = await fetch("/.netlify/functions/dropbox-check", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    const payload = await response.json();
+    if (!response.ok) throw new Error(payload.error || "Connection test failed.");
+    result.textContent = "SUCCESS\n" + payload.message;
+  } catch (error) {
+    result.textContent = "NOT CONNECTED\n" + error.message;
+  } finally {
+    button.disabled = false;
+  }
+});
+</script>
+</body>
+</html>
