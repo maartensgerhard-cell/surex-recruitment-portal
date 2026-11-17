@@ -388,6 +388,7 @@ async function updateAutomaticCandidateStatus(candidateId, mieValue, documents, 
 
   const candidate = candidates.find(item => item.id === candidateId);
   if (candidate) candidate.status = nextStatus;
+  $("status").value = nextStatus;
   return nextStatus;
 }
 
