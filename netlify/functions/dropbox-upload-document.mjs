@@ -149,8 +149,9 @@ export default async (req) => {
       })
     });
     if (!documentResponse.ok) {
-      console.error("Document record save failed:", await documentResponse.text());
-      throw new Error("The file reached Dropbox, but its record could not be saved in the portal. Contact the administrator before uploading it again.");
+      const databaseError = await documentResponse.text();
+      console.error("Document record save failed:", documentResponse.status, databaseError);
+      throw new Error("The file reached Dropbox, but the portal could not save its record (database HTTP " + documentResponse.status + "). Details: " + databaseError.slice(0, 700));
     }
 
     return new Response(JSON.stringify({
