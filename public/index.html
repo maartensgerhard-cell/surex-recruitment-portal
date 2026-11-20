@@ -31,6 +31,15 @@ th{color:#b8c5d1;font-weight:normal}
 .message{background:#243744;padding:12px;border-radius:7px;white-space:pre-wrap;overflow-wrap:anywhere}
 .error{color:#ff8585}
 #loginPanel{max-width:440px;margin:60px auto}
+.overview-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:16px}
+.overview-card{background:#101820;border:1px solid #354555;border-radius:10px;padding:16px}
+.overview-label{color:#b8c5d1;font-size:13px}
+.overview-value{font-size:30px;font-weight:bold;color:#00b8d9;margin:8px 0}
+.overview-note{font-size:11px;color:#9eacb9}
+.overview-bottom{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:18px;padding-top:16px;border-top:1px solid #354555}
+.overview-branches{display:grid;gap:6px;margin-top:8px}
+@media(max-width:800px){.overview-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.overview-bottom{grid-template-columns:1fr}}
+@media(max-width:500px){.overview-grid{grid-template-columns:1fr 1fr}.overview-card{padding:12px}.overview-value{font-size:25px}}
 .small{font-size:12px}
 @media(max-width:800px){.toolbar{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:500px){.grid,.toolbar{grid-template-columns:1fr}.full{grid-column:auto}main{padding:16px 4%}.panel{padding:15px}}
@@ -63,6 +72,28 @@ th{color:#b8c5d1;font-weight:normal}
 <section id="app" class="hidden">
   <div class="row" style="justify-content:space-between"><div><h1>Candidate management</h1><p class="muted">Search, review and update recruitment candidates.</p></div><button type="button" onclick="location.href='/cv-management.html'">CV Management</button></div>
   <p class="muted">Search, review and update recruitment candidates.</p>
+
+  <section class="panel" id="overviewPanel">
+    <div class="row" style="justify-content:space-between">
+      <div>
+        <h2>Recruitment Overview</h2>
+        <p class="muted small">Live snapshot of your active Free State recruitment pipeline.</p>
+      </div>
+      <span class="muted small" id="overviewUpdated">Updating overview...</span>
+    </div>
+    <div class="overview-grid">
+      <div class="overview-card"><div class="overview-label">Active candidates</div><div class="overview-value" id="metricTotal">—</div><div class="overview-note">Currently in the portal</div></div>
+      <div class="overview-card"><div class="overview-label">Awaiting MIE</div><div class="overview-value" id="metricMie">—</div><div class="overview-note">MIE not yet cleared</div></div>
+      <div class="overview-card"><div class="overview-label">Documents outstanding</div><div class="overview-value" id="metricDocs">—</div><div class="overview-note">One or more required documents missing</div></div>
+      <div class="overview-card"><div class="overview-label">Ready for submission</div><div class="overview-value" id="metricReady">—</div><div class="overview-note">All seven required documents received</div></div>
+      <div class="overview-card"><div class="overview-label">At Head Office</div><div class="overview-value" id="metricHeadOffice">—</div><div class="overview-note">Submitted, awaiting outcome</div></div>
+      <div class="overview-card"><div class="overview-label">Approved</div><div class="overview-value" id="metricApproved">—</div><div class="overview-note">Successful candidates</div></div>
+    </div>
+    <div class="overview-bottom">
+      <div><strong>Needs attention</strong><p class="muted small" id="overviewAttention">Loading pipeline checks...</p></div>
+      <div><strong>Branch breakdown</strong><div id="overviewBranches" class="overview-branches muted small">Loading...</div></div>
+    </div>
+  </section>
 
   <section class="panel">
     <div class="row" style="justify-content:space-between">
@@ -768,6 +799,63 @@ async function restoreCandidate(candidateId) {
   await loadCandidates("Candidate restored successfully. Their documents and Dropbox folder are still attached.");
 }
 
+async function updateRecruitmentOverview() {
+  const active = candidates;
+  const isCleared = value => String(value || "").trim().toLowerCase() === "cleared";
+  const countStatus = status => active.filter(candidate => candidate.status === status).length;
+  let documentRows = [];
+  let documentLoadError = null;
+
+  try {
+    const {data, error} = await supabase
+      .from("candidate_documents")
+      .select("candidate_id,document_type");
+    if (error) throw error;
+    documentRows = data || [];
+  } catch (error) {
+    documentLoadError = error;
+  }
+
+  const docsByCandidate = new Map();
+  documentRows.forEach(doc => {
+    if (!docsByCandidate.has(doc.candidate_id)) docsByCandidate.set(doc.candidate_id, new Set());
+    docsByCandidate.get(doc.candidate_id).add(doc.document_type);
+  });
+  const required = ["MIE Screening", "ID", "Matric", "Driver's Licence", "Tax", "Bank Confirmation", "CV"];
+  const awaitingMie = active.filter(candidate => !isCleared(candidate.mie_check)).length;
+  const docsOutstanding = documentLoadError ? null : active.filter(candidate => {
+    if (!isCleared(candidate.mie_check)) return false;
+    const received = docsByCandidate.get(candidate.id) || new Set();
+    return !required.every(type => received.has(type));
+  }).length;
+  const ready = countStatus("Ready for Submission");
+  const atHeadOffice = countStatus("Submitted to Head Office");
+  const approved = countStatus("Approved");
+
+  $("metricTotal").textContent = active.length;
+  $("metricMie").textContent = awaitingMie;
+  $("metricDocs").textContent = docsOutstanding === null ? "—" : docsOutstanding;
+  $("metricReady").textContent = ready;
+  $("metricHeadOffice").textContent = atHeadOffice;
+  $("metricApproved").textContent = approved;
+
+  const attention = [];
+  if (awaitingMie) attention.push(awaitingMie + " candidate(s) waiting for MIE clearance");
+  if (docsOutstanding > 0) attention.push(docsOutstanding + " cleared candidate(s) with outstanding documents");
+  if (atHeadOffice) attention.push(atHeadOffice + " candidate(s) submitted to Head Office");
+  if (documentLoadError) attention.push("Document totals could not be loaded; refresh to try again");
+  $("overviewAttention").textContent = attention.length ? attention.join(" · ") : "No outstanding pipeline items. Great work.";
+
+  const branchCounts = branches.map(branch => ({
+    name: branch.name,
+    count: active.filter(candidate => candidate.branch_id === branch.id).length
+  }));
+  $("overviewBranches").innerHTML = branchCounts.map(item =>
+    '<div style="display:flex;justify-content:space-between;gap:12px"><span>' + escapeHTML(item.name) + '</span><strong>' + item.count + '</strong></div>'
+  ).join("") || "No branches found.";
+  $("overviewUpdated").textContent = "Updated " + new Date().toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"});
+}
+
 function renderCandidates() {
   const branchNames = new Map(branches.map(x => [x.id, x.name]));
   const recruiterNames = new Map(recruiters.map(x => [x.id, x.name]));
@@ -799,6 +887,7 @@ function renderCandidates() {
 
   $("count").textContent =
     `Showing ${filtered.length} of ${candidates.length} active candidates.`;
+  updateRecruitmentOverview();
 }
 
 function escapeHTML(value) {
