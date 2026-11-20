@@ -41,7 +41,7 @@ th{color:#b8c5d1;font-weight:normal}
 .chart-heading{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:16px}
 .chart-tag{font-size:10px;letter-spacing:1px;color:#00d4ef;border:1px solid #176879;border-radius:20px;padding:4px 8px}
 .bar-chart{display:grid;gap:13px}
-.bar-row{display:grid;grid-template-columns:minmax(100px,1fr) 2fr 28px;gap:10px;align-items:center;font-size:12px}
+.bar-row{display:grid;grid-template-columns:minmax(100px,1fr) 2fr 28px;gap:10px;align-items:center;font-size:12px;border-radius:7px;padding:5px 7px;margin:2px -7px;transition:background .15s ease}.bar-row.chart-clickable{cursor:pointer}.bar-row.chart-clickable:hover,.bar-row.chart-clickable:focus{background:#263543;outline:1px solid #00b8d9}.bar-row.chart-clickable:focus-visible{outline:2px solid #00c4e4;outline-offset:2px}
 .bar-label{color:#c5d1dc;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .bar-track{height:9px;background:#263543;border-radius:20px;overflow:hidden}
 .bar-fill{height:100%;border-radius:20px;background:linear-gradient(90deg,#007f9b,#00c4e4);min-width:0;transition:width .35s ease}
@@ -865,28 +865,64 @@ async function updateRecruitmentOverview() {
   $("overviewAttention").textContent = attention.length ? attention.join(" · ") : "No outstanding pipeline items. Great work.";
 
   const pipelineStages = [
-    {name:"New / MIE pending", count:active.filter(c => c.status === "New").length},
-    {name:"Documents outstanding", count:countStatus("Documents Outstanding")},
-    {name:"Ready for submission", count:ready},
-    {name:"At Head Office", count:atHeadOffice},
-    {name:"Approved", count:approved},
-    {name:"Declined", count:countStatus("Declined")}
+    {name:"New / MIE pending", status:"New", count:active.filter(c => c.status === "New").length},
+    {name:"Documents outstanding", status:"Documents Outstanding", count:countStatus("Documents Outstanding")},
+    {name:"Ready for submission", status:"Ready for Submission", count:ready},
+    {name:"At Head Office", status:"Submitted to Head Office", count:atHeadOffice},
+    {name:"Approved", status:"Approved", count:approved},
+    {name:"Declined", status:"Declined", count:countStatus("Declined")}
   ];
   const maxPipeline = Math.max(1, ...pipelineStages.map(item => item.count));
   $("overviewPipeline").innerHTML = pipelineStages.map(item =>
-    '<div class="bar-row"><span class="bar-label">' + escapeHTML(item.name) + '</span><div class="bar-track"><div class="bar-fill" style="width:' + (item.count / maxPipeline * 100) + '%"></div></div><strong class="bar-number">' + item.count + '</strong></div>'
+    '<div class="bar-row chart-clickable" role="button" tabindex="0" data-pipeline-status="' + escapeHTML(item.status) + '" aria-label="Filter candidates: ' + escapeHTML(item.name) + ', ' + item.count + '">' +
+    '<span class="bar-label">' + escapeHTML(item.name) + '</span><div class="bar-track"><div class="bar-fill" style="width:' + (item.count / maxPipeline * 100) + '%"></div></div><strong class="bar-number">' + item.count + '</strong></div>'
   ).join("");
 
   const branchCounts = branches.map(branch => ({
+    id: branch.id,
     name: branch.name,
     count: active.filter(candidate => candidate.branch_id === branch.id).length
   }));
   const maxBranch = Math.max(1, ...branchCounts.map(item => item.count));
   $("overviewBranches").innerHTML = branchCounts.map(item =>
-    '<div class="bar-row"><span class="bar-label">' + escapeHTML(item.name) + '</span><div class="bar-track"><div class="bar-fill" style="width:' + (item.count / maxBranch * 100) + '%"></div></div><strong class="bar-number">' + item.count + '</strong></div>'
+    '<div class="bar-row chart-clickable" role="button" tabindex="0" data-branch-id="' + escapeHTML(item.id) + '" aria-label="Filter candidates in ' + escapeHTML(item.name) + ', ' + item.count + '">' +
+    '<span class="bar-label">' + escapeHTML(item.name) + '</span><div class="bar-track"><div class="bar-fill" style="width:' + (item.count / maxBranch * 100) + '%"></div></div><strong class="bar-number">' + item.count + '</strong></div>'
   ).join("") || "No branches found.";
   $("overviewUpdated").textContent = "Updated " + new Date().toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"});
 }
+
+function applyOverviewChartFilter(target) {
+  if (!target) return;
+  $("search").value = "";
+  $("recruiterFilter").value = "";
+  if (target.dataset.branchId) {
+    $("branchFilter").value = target.dataset.branchId;
+    $("statusFilter").value = "";
+  } else if (target.dataset.pipelineStatus !== undefined) {
+    $("branchFilter").value = "";
+    const requestedStatus = target.dataset.pipelineStatus;
+    $("statusFilter").value = [...$("statusFilter").options].some(option => option.value === requestedStatus)
+      ? requestedStatus : "";
+  } else {
+    return;
+  }
+  renderCandidates();
+  document.querySelector("#rows").closest(".panel").scrollIntoView({behavior:"smooth", block:"start"});
+}
+
+["overviewPipeline", "overviewBranches"].forEach(id => {
+  $(id).addEventListener("click", event => {
+    const target = event.target.closest(".chart-clickable");
+    if (target) applyOverviewChartFilter(target);
+  });
+  $(id).addEventListener("keydown", event => {
+    if (event.key !== "Enter" && event.key !== " ") return;
+    const target = event.target.closest(".chart-clickable");
+    if (!target) return;
+    event.preventDefault();
+    applyOverviewChartFilter(target);
+  });
+});
 
 function renderCandidates() {
   const branchNames = new Map(branches.map(x => [x.id, x.name]));
