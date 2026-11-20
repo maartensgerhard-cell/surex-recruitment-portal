@@ -36,9 +36,20 @@ th{color:#b8c5d1;font-weight:normal}
 .overview-label{color:#b8c5d1;font-size:13px}
 .overview-value{font-size:30px;font-weight:bold;color:#00b8d9;margin:8px 0}
 .overview-note{font-size:11px;color:#9eacb9}
-.overview-bottom{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:18px;padding-top:16px;border-top:1px solid #354555}
-.overview-branches{display:grid;gap:6px;margin-top:8px}
-@media(max-width:800px){.overview-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.overview-bottom{grid-template-columns:1fr}}
+.overview-charts{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:18px}
+.chart-panel{background:#101820;border:1px solid #354555;border-radius:12px;padding:17px;min-width:0}
+.chart-heading{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:16px}
+.chart-tag{font-size:10px;letter-spacing:1px;color:#00d4ef;border:1px solid #176879;border-radius:20px;padding:4px 8px}
+.bar-chart{display:grid;gap:13px}
+.bar-row{display:grid;grid-template-columns:minmax(100px,1fr) 2fr 28px;gap:10px;align-items:center;font-size:12px}
+.bar-label{color:#c5d1dc;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bar-track{height:9px;background:#263543;border-radius:20px;overflow:hidden}
+.bar-fill{height:100%;border-radius:20px;background:linear-gradient(90deg,#007f9b,#00c4e4);min-width:0;transition:width .35s ease}
+.bar-number{text-align:right;font-weight:bold;color:#fff;font-variant-numeric:tabular-nums}
+.attention-strip{display:flex;align-items:center;gap:12px;margin-top:15px;padding:13px 15px;background:#202f3b;border:1px solid #354555;border-radius:10px}
+.attention-icon{display:grid;place-items:center;flex:0 0 28px;height:28px;border-radius:50%;background:#62451c;color:#ffd27a;font-weight:bold}
+.attention-strip p{margin:4px 0 0}
+@media(max-width:800px){.overview-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.overview-charts{grid-template-columns:1fr}}
 @media(max-width:500px){.overview-grid{grid-template-columns:1fr 1fr}.overview-card{padding:12px}.overview-value{font-size:25px}}
 .small{font-size:12px}
 @media(max-width:800px){.toolbar{grid-template-columns:repeat(2,minmax(0,1fr))}}
@@ -89,10 +100,17 @@ th{color:#b8c5d1;font-weight:normal}
       <div class="overview-card"><div class="overview-label">At Head Office</div><div class="overview-value" id="metricHeadOffice">—</div><div class="overview-note">Submitted, awaiting outcome</div></div>
       <div class="overview-card"><div class="overview-label">Approved</div><div class="overview-value" id="metricApproved">—</div><div class="overview-note">Successful candidates</div></div>
     </div>
-    <div class="overview-bottom">
-      <div><strong>Needs attention</strong><p class="muted small" id="overviewAttention">Loading pipeline checks...</p></div>
-      <div><strong>Branch breakdown</strong><div id="overviewBranches" class="overview-branches muted small">Loading...</div></div>
+    <div class="overview-charts">
+      <div class="chart-panel">
+        <div class="chart-heading"><div><strong>Candidate pipeline</strong><p class="muted small">Where candidates currently sit</p></div><span class="chart-tag">LIVE</span></div>
+        <div id="overviewPipeline" class="bar-chart">Loading pipeline...</div>
+      </div>
+      <div class="chart-panel">
+        <div class="chart-heading"><div><strong>Branch performance</strong><p class="muted small">Active candidates by branch</p></div><span class="chart-tag">LIVE</span></div>
+        <div id="overviewBranches" class="bar-chart">Loading branches...</div>
+      </div>
     </div>
+    <div class="attention-strip"><div class="attention-icon">!</div><div><strong>Needs attention</strong><p class="muted small" id="overviewAttention">Loading pipeline checks...</p></div></div>
   </section>
 
   <section class="panel">
@@ -846,12 +864,26 @@ async function updateRecruitmentOverview() {
   if (documentLoadError) attention.push("Document totals could not be loaded; refresh to try again");
   $("overviewAttention").textContent = attention.length ? attention.join(" · ") : "No outstanding pipeline items. Great work.";
 
+  const pipelineStages = [
+    {name:"New / MIE pending", count:active.filter(c => c.status === "New").length},
+    {name:"Documents outstanding", count:countStatus("Documents Outstanding")},
+    {name:"Ready for submission", count:ready},
+    {name:"At Head Office", count:atHeadOffice},
+    {name:"Approved", count:approved},
+    {name:"Declined", count:countStatus("Declined")}
+  ];
+  const maxPipeline = Math.max(1, ...pipelineStages.map(item => item.count));
+  $("overviewPipeline").innerHTML = pipelineStages.map(item =>
+    '<div class="bar-row"><span class="bar-label">' + escapeHTML(item.name) + '</span><div class="bar-track"><div class="bar-fill" style="width:' + (item.count / maxPipeline * 100) + '%"></div></div><strong class="bar-number">' + item.count + '</strong></div>'
+  ).join("");
+
   const branchCounts = branches.map(branch => ({
     name: branch.name,
     count: active.filter(candidate => candidate.branch_id === branch.id).length
   }));
+  const maxBranch = Math.max(1, ...branchCounts.map(item => item.count));
   $("overviewBranches").innerHTML = branchCounts.map(item =>
-    '<div style="display:flex;justify-content:space-between;gap:12px"><span>' + escapeHTML(item.name) + '</span><strong>' + item.count + '</strong></div>'
+    '<div class="bar-row"><span class="bar-label">' + escapeHTML(item.name) + '</span><div class="bar-track"><div class="bar-fill" style="width:' + (item.count / maxBranch * 100) + '%"></div></div><strong class="bar-number">' + item.count + '</strong></div>'
   ).join("") || "No branches found.";
   $("overviewUpdated").textContent = "Updated " + new Date().toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"});
 }
