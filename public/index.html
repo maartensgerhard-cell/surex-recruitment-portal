@@ -46,7 +46,7 @@ th{color:#b8c5d1;font-weight:normal}
 .bar-track{height:9px;background:#263543;border-radius:20px;overflow:hidden}
 .bar-fill{height:100%;border-radius:20px;background:linear-gradient(90deg,#007f9b,#00c4e4);min-width:0;transition:width .35s ease}
 .bar-number{text-align:right;font-weight:bold;color:#fff;font-variant-numeric:tabular-nums}
-.attention-strip{display:flex;align-items:center;gap:12px;margin-top:15px;padding:13px 15px;background:#202f3b;border:1px solid #354555;border-radius:10px}
+.ageing-panel{margin-top:15px;padding:17px;background:#101820;border:1px solid #354555;border-radius:12px}.ageing-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:12px 0 16px}.ageing-stat{background:#1d2935;border:1px solid #354555;border-radius:9px;padding:12px}.ageing-stat span{display:block;color:#b8c5d1;font-size:12px}.ageing-stat strong{display:block;color:#00c4e4;font-size:23px;margin-top:6px}.ageing-table-wrap{overflow-x:auto}.ageing-table{width:100%;border-collapse:collapse;min-width:620px}.ageing-table th,.ageing-table td{text-align:left;padding:10px 8px;border-bottom:1px solid #263543;font-size:12px}.ageing-table th{color:#9eacb9;font-weight:600}.ageing-table td:last-child{font-weight:bold;font-variant-numeric:tabular-nums}.ageing-candidate{background:none;color:#d8e5ee;padding:2px 0;margin:0;text-align:left}.ageing-candidate:hover{color:#00d4ef;text-decoration:underline}.ageing-warn{color:#ffd27a}.ageing-critical{color:#ff8b8b}@media(max-width:600px){.ageing-summary{grid-template-columns:1fr 1fr}.ageing-stat:last-child{grid-column:1/-1}}\n.attention-strip{display:flex;align-items:center;gap:12px;margin-top:15px;padding:13px 15px;background:#202f3b;border:1px solid #354555;border-radius:10px}
 .attention-icon{display:grid;place-items:center;flex:0 0 28px;height:28px;border-radius:50%;background:#62451c;color:#ffd27a;font-weight:bold}
 .attention-strip p{margin:4px 0 0}
 @media(max-width:800px){.overview-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.overview-charts{grid-template-columns:1fr}.recruiter-chart-panel{grid-column:auto}}
@@ -115,6 +115,21 @@ th{color:#b8c5d1;font-weight:normal}
       <div id="overviewRecruiters" class="bar-chart">Loading recruiters...</div>
     </div>
     <div class="attention-strip"><div class="attention-icon">!</div><div><strong>Needs attention</strong><p class="muted small" id="overviewAttention">Loading pipeline checks...</p></div></div>
+    <div class="ageing-panel">
+      <div class="chart-heading"><div><strong>Candidate ageing &amp; bottlenecks</strong><p class="muted small">Time spent in the current recruitment stage · active candidates only</p></div><span class="chart-tag">LIVE</span></div>
+      <div class="ageing-summary">
+        <div class="ageing-stat"><span>Over 7 days</span><strong id="ageing7">—</strong></div>
+        <div class="ageing-stat"><span>Over 14 days</span><strong id="ageing14">—</strong></div>
+        <div class="ageing-stat"><span>Oldest active candidate</span><strong id="ageingOldest">—</strong></div>
+      </div>
+      <div class="ageing-table-wrap">
+        <table class="ageing-table">
+          <thead><tr><th>Candidate</th><th>Current stage</th><th>Branch</th><th>Recruiter</th><th>Days in stage</th></tr></thead>
+          <tbody id="ageingRows"><tr><td colspan="5" class="muted">Calculating candidate ageing...</td></tr></tbody>
+        </table>
+      </div>
+      <p class="muted small" id="ageingNote">Age is calculated from the latest available stage timestamp. Older records without a stage timestamp use their creation date as an estimate.</p>
+    </div>
   </section>
 
   <section class="panel">
@@ -380,7 +395,7 @@ async function loadCandidates(successMessage = "") {
         "id,full_name,branch_id,recruiter_id,status," +
         "licence_check,credit_check,mie_check,screening_notes," +
         "deleted_at,permanent_delete_at,created_at,dropbox_folder_path," +
-        "submitted_at,submitted_by,outcome_at,head_office_reference,head_office_feedback"
+        "submitted_at,submitted_by,outcome_at,updated_at,head_office_reference,head_office_feedback"
       )
       .is("deleted_at", null)
       .order("created_at", {ascending: false});
@@ -942,6 +957,40 @@ function applyOverviewChartFilter(target) {
   });
 });
 
+function updateCandidateAgeing() {
+  const now = Date.now();
+  const activeStages = ["New", "Documents Outstanding", "Ready for Submission", "Submitted to Head Office"];
+  const branchNames = new Map(branches.map(item => [item.id, item.name]));
+  const recruiterNames = new Map(recruiters.map(item => [item.id, item.name]));
+  const records = candidates.filter(candidate => activeStages.includes(candidate.status)).map(candidate => {
+    const stageDate = candidate.status === "Submitted to Head Office"
+      ? candidate.submitted_at
+      : candidate.updated_at || candidate.created_at;
+    const parsed = stageDate ? new Date(stageDate).getTime() : NaN;
+    const days = Number.isFinite(parsed) ? Math.max(0, Math.floor((now - parsed) / 86400000)) : null;
+    return {...candidate, stageDays: days};
+  });
+  const knownAges = records.filter(item => item.stageDays !== null);
+  const over7 = knownAges.filter(item => item.stageDays > 7).length;
+  const over14 = knownAges.filter(item => item.stageDays > 14).length;
+  const oldest = knownAges.reduce((max, item) => Math.max(max, item.stageDays), 0);
+  $("ageing7").textContent = over7;
+  $("ageing14").textContent = over14;
+  $("ageingOldest").textContent = knownAges.length ? oldest + " days" : "—";
+  const oldestRecords = [...knownAges].sort((a, b) => b.stageDays - a.stageDays).slice(0, 8);
+  if (!oldestRecords.length) {
+    $("ageingRows").innerHTML = '<tr><td colspan="5" class="muted">No active candidates in the recruitment pipeline.</td></tr>';
+    return;
+  }
+  $("ageingRows").innerHTML = oldestRecords.map(candidate => {
+    const ageClass = candidate.stageDays > 14 ? "ageing-critical" : candidate.stageDays > 7 ? "ageing-warn" : "";
+    return '<tr><td><button type="button" class="ageing-candidate" data-ageing-edit="' + escapeHTML(candidate.id) + '">' + escapeHTML(candidate.full_name) + '</button></td>' +
+      '<td>' + escapeHTML(candidate.status) + '</td><td>' + escapeHTML(branchNames.get(candidate.branch_id) || "Unknown") + '</td>' +
+      '<td>' + escapeHTML(recruiterNames.get(candidate.recruiter_id) || "Unknown") + '</td><td class="' + ageClass + '">' +
+      (candidate.stageDays === null ? "Unknown" : candidate.stageDays + " days") + '</td></tr>';
+  }).join("");
+}
+
 function renderCandidates() {
   const branchNames = new Map(branches.map(x => [x.id, x.name]));
   const recruiterNames = new Map(recruiters.map(x => [x.id, x.name]));
@@ -974,6 +1023,7 @@ function renderCandidates() {
   $("count").textContent =
     `Showing ${filtered.length} of ${candidates.length} active candidates.`;
   updateRecruitmentOverview();
+  updateCandidateAgeing();
 }
 
 function escapeHTML(value) {
@@ -1178,6 +1228,13 @@ $("deletedRows").addEventListener("click", async event => {
 
 ["search", "branchFilter", "recruiterFilter", "statusFilter"].forEach(id => {
   $(id).addEventListener(id === "search" ? "input" : "change", renderCandidates);
+});
+
+$("ageingRows").addEventListener("click", event => {
+  const button = event.target.closest("button[data-ageing-edit]");
+  if (!button) return;
+  const candidate = candidates.find(item => item.id === button.dataset.ageingEdit);
+  if (candidate) openForm(candidate);
 });
 
 $("rows").addEventListener("click", event => {
