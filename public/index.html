@@ -1246,6 +1246,49 @@ $("rows").addEventListener("click", event => {
   if (candidate) openForm(candidate);
 });
 
+$("mie").addEventListener("change", async () => {
+  if (!editingId || !user) {
+    updateDocumentControls($("mie").value);
+    return;
+  }
+  const candidateId = editingId;
+  const selectedMie = $("mie").value.trim();
+  $("mie").disabled = true;
+  msg("formMessage", "Saving MIE outcome and updating document access...");
+  try {
+    const {error} = await supabase
+      .from("candidates")
+      .update({mie_check: selectedMie, updated_at: new Date().toISOString()})
+      .eq("id", candidateId);
+    if (error) throw error;
+    const candidate = candidates.find(item => item.id === candidateId);
+    if (candidate) {
+      candidate.mie_check = selectedMie;
+      candidate.updated_at = new Date().toISOString();
+    }
+    await updateAutomaticCandidateStatus(
+      candidateId,
+      selectedMie,
+      currentCandidateDocuments,
+      candidate?.status || "New"
+    );
+    updateDocumentControls(selectedMie);
+    renderDocumentChecklist();
+    updateCandidatePackButton(candidateId);
+    await loadCandidates();
+    // Keep the candidate open and refresh the document panel without requiring a second visit.
+    editingId = candidateId;
+    const refreshedCandidate = candidates.find(item => item.id === candidateId);
+    if (refreshedCandidate) $("status").value = refreshedCandidate.status;
+    await loadCandidateDocuments(candidateId);
+    msg("formMessage", "MIE outcome saved. Document access has been updated.");
+  } catch (error) {
+    msg("formMessage", "Could not save the MIE outcome: " + error.message, true);
+  } finally {
+    $("mie").disabled = false;
+  }
+});
+
 $("candidateForm").addEventListener("submit", async event => {
   event.preventDefault();
 
